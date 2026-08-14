@@ -1,0 +1,149 @@
+================================================================================
+TECHUP27 - Openflow "Zero to Hero" - Lab Summary
+================================================================================
+
+TITLE
+-----
+"User Spending Enrichment" — Join two REST APIs into Snowflake with Openflow
+
+DURATION
+--------
+25-30 minutes (after a 10-15 min Openflow overview presentation)
+
+AUDIENCE
+--------
+Internal Snowflake SEs/SAs, first-time Openflow users (Easy track)
+
+GOAL
+----
+Build a data integration pipeline that fetches user data from one API endpoint,
+enriches each user with their shopping cart from a second API call, and writes
+the joined result into a Snowflake table — all without writing code.
+
+By the end of this lab, attendees can say:
+  "I built a multi-source data pipeline in Openflow that calls external APIs,
+   joins data across endpoints, and streams results into Snowflake."
+
+
+================================================================================
+WHAT YOU LEARN
+================================================================================
+
+1. NiFi Canvas Basics
+   - Creating a Process Group
+   - Adding and configuring processors
+   - Connecting processors via relationships
+   - Controller Services (what they are, how to create and enable them)
+
+2. FlowFile Concepts
+   - Content vs Attributes (the two parts of every FlowFile)
+   - How data moves through processors as FlowFiles
+   - How processors read/write content vs attributes
+
+3. REST API Ingestion Pattern
+   - Using InvokeHTTP to call external APIs
+   - Handling JSON array responses with SplitJson
+   - Extracting fields with EvaluateJsonPath
+
+4. Data Enrichment / Lookup Pattern
+   - Using attributes from one API call to parameterize a second call
+   - Expression Language basics (${user_id} in URLs)
+   - Joining data from two sources into a single record
+
+5. Writing to Snowflake
+   - PutSnowpipeStreaming (Snowpipe Streaming SDK — best practice)
+   - Why AttributesToJSON is needed (content vs attributes)
+   - Authentication via SNOWFLAKE_SESSION_TOKEN / SNOWFLAKE_MANAGED on SPCS
+   - Table constraints (no DEFAULT columns with Snowpipe Streaming)
+
+6. External Access Integration (EAI)
+   - Why SPCS runtimes need EAI for external network access
+   - Network Rules (host:port egress rules)
+   - Attaching EAI to a runtime (SQL or UI)
+
+7. Apache Iceberg (bonus)
+   - Snowflake-managed Iceberg tables (EXTERNAL_VOLUME = SNOWFLAKE_MANAGED)
+   - PutSnowpipeStreaming2 (HPA) for Iceberg writes
+   - Fan-out pattern: same data to regular + Iceberg tables
+   - Differences between classic and HPA processors
+   - INT vs NUMBER for Iceberg column types
+
+
+================================================================================
+WHAT IS COVERED
+================================================================================
+
+Snowflake Objects Created:
+  - Database (TECHUP27)
+  - Table (USER_SPENDING — regular)
+  - Iceberg Table (USER_SPENDING_ICEBERG — Snowflake-managed)
+  - Network Rule
+  - External Access Integration
+  - Role grants
+
+NiFi Processors Used (10 total):
+  - GenerateFlowFile       (trigger/scheduler)
+  - InvokeHTTP x2          (REST API calls)
+  - SplitJson              (JSON array splitting)
+  - EvaluateJsonPath x2    (field extraction to attributes)
+  - UpdateAttribute        (set custom attribute values)
+  - AttributesToJSON       (attributes -> JSON content)
+  - PutSnowpipeStreaming2 x2 (HPA — write to regular table + Iceberg table)
+  - PutSnowpipeStreaming   (write to Snowflake)
+
+NiFi Concepts Demonstrated:
+  - Process Groups
+  - Controller Services (JsonTreeReader)
+  - Relationships and auto-termination
+  - Expression Language (${attribute_name})
+  - FlowFile content vs attributes
+  - Run Once (manual trigger for testing)
+
+Data Flow Pattern:
+  Trigger -> Fetch (API 1) -> Split -> Extract -> Fetch (API 2) -> Extract
+  -> Transform -> Write to Snowflake
+
+
+================================================================================
+WHAT IS NOT COVERED (potential follow-ups)
+================================================================================
+
+  - Error handling and retry strategies
+  - Scheduling and idempotency (MERGE/dedup patterns)
+  - Version control (Git registry)
+  - Parameter Contexts (externalized configuration)
+  - Jolt transforms (complex JSON restructuring)
+  - RouteOnAttribute (conditional routing)
+  - CDC connectors (PostgreSQL, MySQL, etc.)
+  - Custom flow authoring with the Openflow CoCo skill
+  - Monitoring and alerting (bulletins, event table)
+
+
+================================================================================
+PREREQUISITES (completed before the session)
+================================================================================
+
+  1. Openflow quickstart guide completed (deployment + runtime running)
+  2. Run techup27_setup.sql as ACCOUNTADMIN
+  3. Attach TECHUP27_LAB_EAI to the runtime (via UI or SQL)
+  4. Verify runtime is accessible (open NiFi canvas from Snowsight)
+
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+The lab is complete when:
+  - SELECT COUNT(*) FROM TECHUP27.PUBLIC.USER_SPENDING returns 30 rows
+  - All columns are populated (USER_ID, names, cart totals, INGESTED_AT)
+  - No bulletin errors on the NiFi canvas
+  - Attendee understands the fetch -> enrich -> write pattern
+
+
+================================================================================
+FILES IN THIS PACKAGE
+================================================================================
+
+  techup27_setup.sql    - SQL script to provision the environment (run first)
+  techup27_hints.txt    - Step-by-step cheat sheet with processor configs
+  techup27_summary.txt  - This file (lab overview and learning objectives)
