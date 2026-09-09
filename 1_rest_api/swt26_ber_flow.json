@@ -1,19 +1,19 @@
 {
     "flowContents": {
-        "identifier": "b75556ba-1754-3176-8680-971a3a6fca45",
-        "instanceIdentifier": "d639c3f1-019f-1000-0000-000064437772",
-        "name": "TechUp27 - User Spending Enrichment",
+        "identifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+        "instanceIdentifier": "7d746f59-01a0-1000-ffff-ffffc1ff2c4a",
+        "name": "swt26_ber_restapi_flow",
         "comments": "",
         "position": {
-            "x": 336.0,
-            "y": 688.0
+            "x": 886.0,
+            "y": 298.0
         },
         "processGroups": [],
         "remoteProcessGroups": [],
         "processors": [
             {
                 "identifier": "14b9e059-af76-311a-a362-e4df970bf16f",
-                "instanceIdentifier": "d639cbef-019f-1000-ffff-ffffad964c1f",
+                "instanceIdentifier": "5dded91d-4acc-3565-a673-98e89761656e",
                 "name": "Trigger (run once)",
                 "comments": "",
                 "position": {
@@ -24,7 +24,7 @@
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "File Size": "0B",
@@ -102,11 +102,11 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "e0ec0cea-a1ba-379b-9d30-02f3b9f26edf",
-                "instanceIdentifier": "d639ccf2-019f-1000-0000-00004dc305f2",
+                "instanceIdentifier": "f99bcf4e-bad7-3eb0-9aeb-8e437060a522",
                 "name": "Fetch Users",
                 "comments": "",
                 "position": {
@@ -117,7 +117,7 @@
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Request Content-Encoding": "DISABLED",
@@ -431,22 +431,22 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "7b16e58f-4614-3965-b690-dd22c73efb9f",
-                "instanceIdentifier": "d64b76c3-019f-1000-ffff-ffffb091bed5",
+                "instanceIdentifier": "df133457-3f18-38ff-ac0e-2e62009f18d5",
                 "name": "Set Timestamp",
                 "comments": "",
                 "position": {
-                    "x": 500.0,
-                    "y": 1600.0
+                    "x": 504.0,
+                    "y": 1632.0
                 },
                 "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-update-attribute-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Delete Attributes Expression": null,
@@ -508,22 +508,22 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "8fa905b5-f0eb-3f0c-b58a-5341108cabbf",
-                "instanceIdentifier": "d639d102-019f-1000-ffff-ffffd7552eab",
+                "instanceIdentifier": "6c6f5fb9-10a9-3891-b601-42032efe334d",
                 "name": "Extract Cart Totals",
                 "comments": "",
                 "position": {
-                    "x": 500.0,
-                    "y": 1350.0
+                    "x": 488.0,
+                    "y": 1368.0
                 },
                 "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Destination": "flowfile-attribute",
@@ -620,11 +620,11 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "64c117d5-3fe0-39f3-8dec-29ae65adb0e5",
-                "instanceIdentifier": "d639cff8-019f-1000-ffff-ffffbf47dbc8",
+                "instanceIdentifier": "569380e9-880b-31cb-8594-b9085f4f34c5",
                 "name": "Fetch Cart",
                 "comments": "",
                 "position": {
@@ -635,7 +635,7 @@
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Request Content-Encoding": "DISABLED",
@@ -949,11 +949,237 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
+            },
+            {
+                "identifier": "7c8be3f5-c02f-3f24-972d-3c02fa0d0e66",
+                "instanceIdentifier": "86bb5dc0-01a0-1000-0000-000014fdecd6",
+                "name": "Write to USER_SPENDING_ICEBERG",
+                "comments": "",
+                "position": {
+                    "x": 784.0,
+                    "y": 2464.0
+                },
+                "type": "com.snowflake.openflow.runtime.processors.snowpipe.streaming.PublishSnowpipeStreaming",
+                "bundle": {
+                    "group": "com.snowflake.openflow.runtime",
+                    "artifact": "runtime-snowpipe-streaming-2-processors-nar",
+                    "version": "2026.9.5.13"
+                },
+                "properties": {
+                    "Account": null,
+                    "Offset Token Start Expression": null,
+                    "User": null,
+                    "Table": null,
+                    "Transfer Strategy": "ROWS",
+                    "File Fragment Size": "64 MB",
+                    "Offset Tracking Timeout": "90 s",
+                    "Channel Group": "SHARED",
+                    "Schema": "PUBLIC",
+                    "Pipe": "USER_SPENDING_ICEBERG-STREAMING",
+                    "Offset Tracking Resolution": "FLOW_FILE",
+                    "Private Key Service": null,
+                    "Offset Token Record Pointer": null,
+                    "Connection Strategy": "STANDARD",
+                    "Role": null,
+                    "Authentication Strategy": "SNOWFLAKE_MANAGED",
+                    "Offset Token End Expression": "${user_id}",
+                    "Database": "MARKUS_TEST",
+                    "Channel Type": "STANDARD",
+                    "File Fragment Count": "4",
+                    "Channel Insert Timeout": "30 s",
+                    "Destination Type": "PIPE",
+                    "Web Client Service Provider": "3eb20c39-602f-3054-b2bb-c7c2df4e2507"
+                },
+                "propertyDescriptors": {
+                    "Account": {
+                        "name": "Account",
+                        "displayName": "Account",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Offset Token Start Expression": {
+                        "name": "Offset Token Start Expression",
+                        "displayName": "Offset Token Start Expression",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "User": {
+                        "name": "User",
+                        "displayName": "User",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Table": {
+                        "name": "Table",
+                        "displayName": "Table",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Transfer Strategy": {
+                        "name": "Transfer Strategy",
+                        "displayName": "Transfer Strategy",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "File Fragment Size": {
+                        "name": "File Fragment Size",
+                        "displayName": "File Fragment Size",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Offset Tracking Timeout": {
+                        "name": "Offset Tracking Timeout",
+                        "displayName": "Offset Tracking Timeout",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Channel Group": {
+                        "name": "Channel Group",
+                        "displayName": "Channel Group",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Schema": {
+                        "name": "Schema",
+                        "displayName": "Schema",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Pipe": {
+                        "name": "Pipe",
+                        "displayName": "Pipe",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Offset Tracking Resolution": {
+                        "name": "Offset Tracking Resolution",
+                        "displayName": "Offset Tracking Resolution",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Private Key Service": {
+                        "name": "Private Key Service",
+                        "displayName": "Private Key Service",
+                        "identifiesControllerService": true,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Offset Token Record Pointer": {
+                        "name": "Offset Token Record Pointer",
+                        "displayName": "Offset Token Record Pointer",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Connection Strategy": {
+                        "name": "Connection Strategy",
+                        "displayName": "Connection Strategy",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Role": {
+                        "name": "Role",
+                        "displayName": "Role",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Authentication Strategy": {
+                        "name": "Authentication Strategy",
+                        "displayName": "Authentication Strategy",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Offset Token End Expression": {
+                        "name": "Offset Token End Expression",
+                        "displayName": "Offset Token End Expression",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Database": {
+                        "name": "Database",
+                        "displayName": "Database",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Channel Type": {
+                        "name": "Channel Type",
+                        "displayName": "Channel Type",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "File Fragment Count": {
+                        "name": "File Fragment Count",
+                        "displayName": "File Fragment Count",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Channel Insert Timeout": {
+                        "name": "Channel Insert Timeout",
+                        "displayName": "Channel Insert Timeout",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Destination Type": {
+                        "name": "Destination Type",
+                        "displayName": "Destination Type",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Web Client Service Provider": {
+                        "name": "Web Client Service Provider",
+                        "displayName": "Web Client Service Provider",
+                        "identifiesControllerService": true,
+                        "sensitive": false,
+                        "dynamic": false
+                    }
+                },
+                "style": {},
+                "schedulingPeriod": "0 sec",
+                "schedulingStrategy": "TIMER_DRIVEN",
+                "executionNode": "ALL",
+                "penaltyDuration": "30 sec",
+                "yieldDuration": "1 sec",
+                "bulletinLevel": "WARN",
+                "runDurationMillis": 0,
+                "concurrentlySchedulableTaskCount": 1,
+                "autoTerminatedRelationships": [
+                    "success",
+                    "failure",
+                    "invalid",
+                    "empty"
+                ],
+                "scheduledState": "ENABLED",
+                "retryCount": 10,
+                "retriedRelationships": [],
+                "backoffMechanism": "PENALIZE_FLOWFILE",
+                "maxBackoffPeriod": "10 mins",
+                "componentType": "PROCESSOR",
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "106ec07b-4b78-3d78-8260-b05ab0d06282",
-                "instanceIdentifier": "d639cef6-019f-1000-0000-00002ce5b2de",
+                "instanceIdentifier": "97376ee2-d697-3f6b-a70c-3213250efdba",
                 "name": "Extract User Info",
                 "comments": "",
                 "position": {
@@ -964,7 +1190,7 @@
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Destination": "flowfile-attribute",
@@ -1077,11 +1303,11 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "10e1ba37-f847-3abd-8c06-1610dc0aac5b",
-                "instanceIdentifier": "d639cdfc-019f-1000-ffff-fffffcc78bed",
+                "instanceIdentifier": "bd8d4d5e-54a0-3086-8839-2076639bac69",
                 "name": "Split Users",
                 "comments": "",
                 "position": {
@@ -1092,7 +1318,7 @@
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Max String Length": "20 MB",
@@ -1141,43 +1367,46 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
-                "identifier": "5d3c0bd5-e23d-3b35-8ecb-22d61ff4ba7b",
-                "instanceIdentifier": "f65baf99-019f-1000-ffff-ffffe88256a1",
+                "identifier": "69eed1dd-43f5-300b-9d64-29088f199cd7",
+                "instanceIdentifier": "818c660a-01a0-1000-0000-00000eb5c4ef",
                 "name": "Write to USER_SPENDING",
                 "comments": "",
                 "position": {
-                    "x": 500.0,
-                    "y": 2100.0
+                    "x": 264.0,
+                    "y": 2464.0
                 },
-                "type": "com.snowflake.openflow.runtime.processors.snowpipe.streaming.PutSnowpipeStreaming2",
+                "type": "com.snowflake.openflow.runtime.processors.snowpipe.streaming.PublishSnowpipeStreaming",
                 "bundle": {
                     "group": "com.snowflake.openflow.runtime",
                     "artifact": "runtime-snowpipe-streaming-2-processors-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
-                    "Account": "SFPSCOGS-DSAILLARD_AWS_DEMO",
-                    "Offset Token Start Expression": "${user_id}",
-                    "User": "unused",
+                    "Account": null,
+                    "Offset Token Start Expression": null,
+                    "User": null,
+                    "Table": "USER_SPENDING",
                     "Transfer Strategy": "ROWS",
                     "File Fragment Size": "64 MB",
                     "Offset Tracking Timeout": "90 s",
                     "Channel Group": "SHARED",
                     "Schema": "PUBLIC",
-                    "Pipe": "USER_SPENDING-STREAMING",
+                    "Pipe": null,
                     "Offset Tracking Resolution": "FLOW_FILE",
                     "Private Key Service": null,
                     "Offset Token Record Pointer": null,
                     "Connection Strategy": "STANDARD",
-                    "Role": "QUICKSTART_OPENFLOW_ROLE",
+                    "Role": null,
                     "Authentication Strategy": "SNOWFLAKE_MANAGED",
                     "Offset Token End Expression": "${user_id}",
-                    "Database": "TECHUP27",
+                    "Database": "MARKUS_TEST",
+                    "Channel Type": "STANDARD",
                     "File Fragment Count": "4",
                     "Channel Insert Timeout": "30 s",
+                    "Destination Type": "TABLE",
                     "Web Client Service Provider": "3eb20c39-602f-3054-b2bb-c7c2df4e2507"
                 },
                 "propertyDescriptors": {
@@ -1198,6 +1427,13 @@
                     "User": {
                         "name": "User",
                         "displayName": "User",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Table": {
+                        "name": "Table",
+                        "displayName": "Table",
                         "identifiesControllerService": false,
                         "sensitive": false,
                         "dynamic": false
@@ -1300,6 +1536,13 @@
                         "sensitive": false,
                         "dynamic": false
                     },
+                    "Channel Type": {
+                        "name": "Channel Type",
+                        "displayName": "Channel Type",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
                     "File Fragment Count": {
                         "name": "File Fragment Count",
                         "displayName": "File Fragment Count",
@@ -1310,6 +1553,13 @@
                     "Channel Insert Timeout": {
                         "name": "Channel Insert Timeout",
                         "displayName": "Channel Insert Timeout",
+                        "identifiesControllerService": false,
+                        "sensitive": false,
+                        "dynamic": false
+                    },
+                    "Destination Type": {
+                        "name": "Destination Type",
+                        "displayName": "Destination Type",
                         "identifiesControllerService": false,
                         "sensitive": false,
                         "dynamic": false
@@ -1334,7 +1584,8 @@
                 "autoTerminatedRelationships": [
                     "success",
                     "failure",
-                    "invalid"
+                    "invalid",
+                    "empty"
                 ],
                 "scheduledState": "ENABLED",
                 "retryCount": 10,
@@ -1342,22 +1593,22 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "c909b014-fd24-3cae-b2d3-c686cb09f8ad",
-                "instanceIdentifier": "d63ad8ae-019f-1000-ffff-ffffa63e83d5",
+                "instanceIdentifier": "41ed621f-1cec-345f-8a75-041aa1fc939b",
                 "name": "Build Record",
                 "comments": "",
                 "position": {
-                    "x": 500.0,
-                    "y": 1850.0
+                    "x": 504.0,
+                    "y": 2000.0
                 },
                 "type": "org.apache.nifi.processors.standard.AttributesToJSON",
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-standard-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Attributes Regular Expression": null,
@@ -1437,234 +1688,34 @@
                 "backoffMechanism": "PENALIZE_FLOWFILE",
                 "maxBackoffPeriod": "10 mins",
                 "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
-            },
-            {
-                "identifier": "c059ab87-a29b-3507-a812-357045357232",
-                "instanceIdentifier": "f63b9451-019f-1000-0000-000022cab645",
-                "name": "Write to USER_SPENDING_ICEBERG",
-                "comments": "",
-                "position": {
-                    "x": 900.0,
-                    "y": 2100.0
-                },
-                "type": "com.snowflake.openflow.runtime.processors.snowpipe.streaming.PutSnowpipeStreaming2",
-                "bundle": {
-                    "group": "com.snowflake.openflow.runtime",
-                    "artifact": "runtime-snowpipe-streaming-2-processors-nar",
-                    "version": "2026.8.4.8"
-                },
-                "properties": {
-                    "Account": "SFPSCOGS-DSAILLARD_AWS_DEMO",
-                    "Offset Token Start Expression": "${user_id}",
-                    "User": "unused",
-                    "Transfer Strategy": "ROWS",
-                    "File Fragment Size": "64 MB",
-                    "Offset Tracking Timeout": "90 s",
-                    "Channel Group": "SHARED",
-                    "Schema": "PUBLIC",
-                    "Pipe": "USER_SPENDING_ICEBERG-STREAMING",
-                    "Offset Tracking Resolution": "FLOW_FILE",
-                    "Private Key Service": null,
-                    "Offset Token Record Pointer": null,
-                    "Connection Strategy": "STANDARD",
-                    "Role": "QUICKSTART_OPENFLOW_ROLE",
-                    "Authentication Strategy": "SNOWFLAKE_MANAGED",
-                    "Offset Token End Expression": "${user_id}",
-                    "Database": "TECHUP27",
-                    "File Fragment Count": "4",
-                    "Channel Insert Timeout": "30 s",
-                    "Web Client Service Provider": "3eb20c39-602f-3054-b2bb-c7c2df4e2507"
-                },
-                "propertyDescriptors": {
-                    "Account": {
-                        "name": "Account",
-                        "displayName": "Account",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Offset Token Start Expression": {
-                        "name": "Offset Token Start Expression",
-                        "displayName": "Offset Token Start Expression",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "User": {
-                        "name": "User",
-                        "displayName": "User",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Transfer Strategy": {
-                        "name": "Transfer Strategy",
-                        "displayName": "Transfer Strategy",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "File Fragment Size": {
-                        "name": "File Fragment Size",
-                        "displayName": "File Fragment Size",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Offset Tracking Timeout": {
-                        "name": "Offset Tracking Timeout",
-                        "displayName": "Offset Tracking Timeout",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Channel Group": {
-                        "name": "Channel Group",
-                        "displayName": "Channel Group",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Schema": {
-                        "name": "Schema",
-                        "displayName": "Schema",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Pipe": {
-                        "name": "Pipe",
-                        "displayName": "Pipe",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Offset Tracking Resolution": {
-                        "name": "Offset Tracking Resolution",
-                        "displayName": "Offset Tracking Resolution",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Private Key Service": {
-                        "name": "Private Key Service",
-                        "displayName": "Private Key Service",
-                        "identifiesControllerService": true,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Offset Token Record Pointer": {
-                        "name": "Offset Token Record Pointer",
-                        "displayName": "Offset Token Record Pointer",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Connection Strategy": {
-                        "name": "Connection Strategy",
-                        "displayName": "Connection Strategy",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Role": {
-                        "name": "Role",
-                        "displayName": "Role",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Authentication Strategy": {
-                        "name": "Authentication Strategy",
-                        "displayName": "Authentication Strategy",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Offset Token End Expression": {
-                        "name": "Offset Token End Expression",
-                        "displayName": "Offset Token End Expression",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Database": {
-                        "name": "Database",
-                        "displayName": "Database",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "File Fragment Count": {
-                        "name": "File Fragment Count",
-                        "displayName": "File Fragment Count",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Channel Insert Timeout": {
-                        "name": "Channel Insert Timeout",
-                        "displayName": "Channel Insert Timeout",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Web Client Service Provider": {
-                        "name": "Web Client Service Provider",
-                        "displayName": "Web Client Service Provider",
-                        "identifiesControllerService": true,
-                        "sensitive": false,
-                        "dynamic": false
-                    }
-                },
-                "style": {},
-                "schedulingPeriod": "0 sec",
-                "schedulingStrategy": "TIMER_DRIVEN",
-                "executionNode": "ALL",
-                "penaltyDuration": "30 sec",
-                "yieldDuration": "1 sec",
-                "bulletinLevel": "WARN",
-                "runDurationMillis": 0,
-                "concurrentlySchedulableTaskCount": 1,
-                "autoTerminatedRelationships": [
-                    "success",
-                    "failure",
-                    "invalid"
-                ],
-                "scheduledState": "ENABLED",
-                "retryCount": 10,
-                "retriedRelationships": [],
-                "backoffMechanism": "PENALIZE_FLOWFILE",
-                "maxBackoffPeriod": "10 mins",
-                "componentType": "PROCESSOR",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             }
         ],
         "inputPorts": [],
         "outputPorts": [],
         "connections": [
             {
-                "identifier": "51e90faa-0704-3586-a58b-664e1ca3889c",
-                "instanceIdentifier": "d639d287-019f-1000-ffff-ffff94d865f4",
+                "identifier": "7e04f937-99df-3e0a-a74c-ee678c087362",
+                "instanceIdentifier": "86bb79ad-01a0-1000-0000-00002dd62e7a",
+                "name": "",
                 "source": {
-                    "id": "14b9e059-af76-311a-a362-e4df970bf16f",
+                    "id": "c909b014-fd24-3cae-b2d3-c686cb09f8ad",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
-                    "name": "Trigger (run once)",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+                    "name": "Build Record",
                     "comments": "",
-                    "instanceIdentifier": "d639cbef-019f-1000-ffff-ffffad964c1f"
+                    "instanceIdentifier": "41ed621f-1cec-345f-8a75-041aa1fc939b"
                 },
                 "destination": {
-                    "id": "e0ec0cea-a1ba-379b-9d30-02f3b9f26edf",
+                    "id": "7c8be3f5-c02f-3f24-972d-3c02fa0d0e66",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
-                    "name": "Fetch Users",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+                    "name": "Write to USER_SPENDING_ICEBERG",
                     "comments": "",
-                    "instanceIdentifier": "d639ccf2-019f-1000-0000-00004dc305f2"
+                    "instanceIdentifier": "86bb5dc0-01a0-1000-0000-000014fdecd6"
                 },
-                "labelIndex": 1,
-                "zIndex": 0,
+                "labelIndex": 0,
+                "zIndex": 3,
                 "selectedRelationships": [
                     "success"
                 ],
@@ -1674,28 +1725,29 @@
                 "prioritizers": [],
                 "bends": [],
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+                "partitioningAttribute": "",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "5676be26-59aa-3f2c-959c-7405bf0ac0fd",
-                "instanceIdentifier": "d639d30c-019f-1000-0000-00005339494a",
+                "instanceIdentifier": "6e17c78b-b48d-3fc4-a1ce-713cf3e379b3",
                 "source": {
                     "id": "e0ec0cea-a1ba-379b-9d30-02f3b9f26edf",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Fetch Users",
                     "comments": "",
-                    "instanceIdentifier": "d639ccf2-019f-1000-0000-00004dc305f2"
+                    "instanceIdentifier": "f99bcf4e-bad7-3eb0-9aeb-8e437060a522"
                 },
                 "destination": {
                     "id": "10e1ba37-f847-3abd-8c06-1610dc0aac5b",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Split Users",
                     "comments": "",
-                    "instanceIdentifier": "d639cdfc-019f-1000-ffff-fffffcc78bed"
+                    "instanceIdentifier": "bd8d4d5e-54a0-3086-8839-2076639bac69"
                 },
                 "labelIndex": 1,
                 "zIndex": 0,
@@ -1710,26 +1762,60 @@
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
+            },
+            {
+                "identifier": "51e90faa-0704-3586-a58b-664e1ca3889c",
+                "instanceIdentifier": "8f7b30ee-2030-3b12-95a1-185966565c29",
+                "source": {
+                    "id": "14b9e059-af76-311a-a362-e4df970bf16f",
+                    "type": "PROCESSOR",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+                    "name": "Trigger (run once)",
+                    "comments": "",
+                    "instanceIdentifier": "5dded91d-4acc-3565-a673-98e89761656e"
+                },
+                "destination": {
+                    "id": "e0ec0cea-a1ba-379b-9d30-02f3b9f26edf",
+                    "type": "PROCESSOR",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+                    "name": "Fetch Users",
+                    "comments": "",
+                    "instanceIdentifier": "f99bcf4e-bad7-3eb0-9aeb-8e437060a522"
+                },
+                "labelIndex": 1,
+                "zIndex": 0,
+                "selectedRelationships": [
+                    "success"
+                ],
+                "backPressureObjectThreshold": 10000,
+                "backPressureDataSizeThreshold": "1 GB",
+                "flowFileExpiration": "0 sec",
+                "prioritizers": [],
+                "bends": [],
+                "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+                "loadBalanceCompression": "DO_NOT_COMPRESS",
+                "componentType": "CONNECTION",
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "03981c4d-3be6-301c-b805-33c206118ecf",
-                "instanceIdentifier": "d639d38d-019f-1000-0000-00001220aae3",
+                "instanceIdentifier": "b1fd2b58-6f2e-39c6-843c-6758ea42b33a",
                 "source": {
                     "id": "10e1ba37-f847-3abd-8c06-1610dc0aac5b",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Split Users",
                     "comments": "",
-                    "instanceIdentifier": "d639cdfc-019f-1000-ffff-fffffcc78bed"
+                    "instanceIdentifier": "bd8d4d5e-54a0-3086-8839-2076639bac69"
                 },
                 "destination": {
                     "id": "106ec07b-4b78-3d78-8260-b05ab0d06282",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Extract User Info",
                     "comments": "",
-                    "instanceIdentifier": "d639cef6-019f-1000-0000-00002ce5b2de"
+                    "instanceIdentifier": "97376ee2-d697-3f6b-a70c-3213250efdba"
                 },
                 "labelIndex": 1,
                 "zIndex": 0,
@@ -1744,26 +1830,26 @@
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "ab454828-117f-363a-ae83-715974528489",
-                "instanceIdentifier": "d64b7c3d-019f-1000-ffff-ffff9ae31ae1",
+                "instanceIdentifier": "9ec19391-33e9-3749-81a1-1c5a4f5e7cf3",
                 "source": {
                     "id": "7b16e58f-4614-3965-b690-dd22c73efb9f",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Set Timestamp",
                     "comments": "",
-                    "instanceIdentifier": "d64b76c3-019f-1000-ffff-ffffb091bed5"
+                    "instanceIdentifier": "df133457-3f18-38ff-ac0e-2e62009f18d5"
                 },
                 "destination": {
                     "id": "c909b014-fd24-3cae-b2d3-c686cb09f8ad",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Build Record",
                     "comments": "",
-                    "instanceIdentifier": "d63ad8ae-019f-1000-ffff-ffffa63e83d5"
+                    "instanceIdentifier": "41ed621f-1cec-345f-8a75-041aa1fc939b"
                 },
                 "labelIndex": 1,
                 "zIndex": 0,
@@ -1778,94 +1864,26 @@
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
-            },
-            {
-                "identifier": "49a04d2b-f822-3f38-b7d8-c7e07a4e465c",
-                "instanceIdentifier": "f65bb560-019f-1000-0000-0000338c4400",
-                "source": {
-                    "id": "c909b014-fd24-3cae-b2d3-c686cb09f8ad",
-                    "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
-                    "name": "Build Record",
-                    "comments": "",
-                    "instanceIdentifier": "d63ad8ae-019f-1000-ffff-ffffa63e83d5"
-                },
-                "destination": {
-                    "id": "5d3c0bd5-e23d-3b35-8ecb-22d61ff4ba7b",
-                    "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
-                    "name": "Write to USER_SPENDING",
-                    "comments": "",
-                    "instanceIdentifier": "f65baf99-019f-1000-ffff-ffffe88256a1"
-                },
-                "labelIndex": 1,
-                "zIndex": 0,
-                "selectedRelationships": [
-                    "success"
-                ],
-                "backPressureObjectThreshold": 10000,
-                "backPressureDataSizeThreshold": "1 GB",
-                "flowFileExpiration": "0 sec",
-                "prioritizers": [],
-                "bends": [],
-                "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
-                "loadBalanceCompression": "DO_NOT_COMPRESS",
-                "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
-            },
-            {
-                "identifier": "e86ef328-e81d-330b-9ca9-bfafadd8e2ba",
-                "instanceIdentifier": "f63b9731-019f-1000-ffff-fffffbd8341d",
-                "source": {
-                    "id": "c909b014-fd24-3cae-b2d3-c686cb09f8ad",
-                    "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
-                    "name": "Build Record",
-                    "comments": "",
-                    "instanceIdentifier": "d63ad8ae-019f-1000-ffff-ffffa63e83d5"
-                },
-                "destination": {
-                    "id": "c059ab87-a29b-3507-a812-357045357232",
-                    "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
-                    "name": "Write to USER_SPENDING_ICEBERG",
-                    "comments": "",
-                    "instanceIdentifier": "f63b9451-019f-1000-0000-000022cab645"
-                },
-                "labelIndex": 1,
-                "zIndex": 0,
-                "selectedRelationships": [
-                    "success"
-                ],
-                "backPressureObjectThreshold": 10000,
-                "backPressureDataSizeThreshold": "1 GB",
-                "flowFileExpiration": "0 sec",
-                "prioritizers": [],
-                "bends": [],
-                "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
-                "loadBalanceCompression": "DO_NOT_COMPRESS",
-                "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "bdde9717-a8c0-36cc-beba-b2473b0bf3d4",
-                "instanceIdentifier": "d64b7bc2-019f-1000-ffff-ffffc1e8fa0f",
+                "instanceIdentifier": "672cd962-4d31-3bfe-bd53-1b6c8c346ebe",
                 "source": {
                     "id": "8fa905b5-f0eb-3f0c-b58a-5341108cabbf",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Extract Cart Totals",
                     "comments": "",
-                    "instanceIdentifier": "d639d102-019f-1000-ffff-ffffd7552eab"
+                    "instanceIdentifier": "6c6f5fb9-10a9-3891-b601-42032efe334d"
                 },
                 "destination": {
                     "id": "7b16e58f-4614-3965-b690-dd22c73efb9f",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Set Timestamp",
                     "comments": "",
-                    "instanceIdentifier": "d64b76c3-019f-1000-ffff-ffffb091bed5"
+                    "instanceIdentifier": "df133457-3f18-38ff-ac0e-2e62009f18d5"
                 },
                 "labelIndex": 1,
                 "zIndex": 0,
@@ -1880,26 +1898,62 @@
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
+            },
+            {
+                "identifier": "436e462b-c0b1-3503-a133-8cd155e44baa",
+                "instanceIdentifier": "818c83bb-01a0-1000-ffff-ffffe16919cf",
+                "name": "",
+                "source": {
+                    "id": "c909b014-fd24-3cae-b2d3-c686cb09f8ad",
+                    "type": "PROCESSOR",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+                    "name": "Build Record",
+                    "comments": "",
+                    "instanceIdentifier": "41ed621f-1cec-345f-8a75-041aa1fc939b"
+                },
+                "destination": {
+                    "id": "69eed1dd-43f5-300b-9d64-29088f199cd7",
+                    "type": "PROCESSOR",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
+                    "name": "Write to USER_SPENDING",
+                    "comments": "",
+                    "instanceIdentifier": "818c660a-01a0-1000-0000-00000eb5c4ef"
+                },
+                "labelIndex": 0,
+                "zIndex": 2,
+                "selectedRelationships": [
+                    "success"
+                ],
+                "backPressureObjectThreshold": 10000,
+                "backPressureDataSizeThreshold": "1 GB",
+                "flowFileExpiration": "0 sec",
+                "prioritizers": [],
+                "bends": [],
+                "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+                "partitioningAttribute": "",
+                "loadBalanceCompression": "DO_NOT_COMPRESS",
+                "componentType": "CONNECTION",
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "d70be9ac-cdfe-3193-8fcb-ff89db76e3e1",
-                "instanceIdentifier": "d639d494-019f-1000-0000-000070ff22cc",
+                "instanceIdentifier": "f94c015a-4bb7-3436-afae-06e5f4cc13e8",
                 "source": {
                     "id": "64c117d5-3fe0-39f3-8dec-29ae65adb0e5",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Fetch Cart",
                     "comments": "",
-                    "instanceIdentifier": "d639cff8-019f-1000-ffff-ffffbf47dbc8"
+                    "instanceIdentifier": "569380e9-880b-31cb-8594-b9085f4f34c5"
                 },
                 "destination": {
                     "id": "8fa905b5-f0eb-3f0c-b58a-5341108cabbf",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Extract Cart Totals",
                     "comments": "",
-                    "instanceIdentifier": "d639d102-019f-1000-ffff-ffffd7552eab"
+                    "instanceIdentifier": "6c6f5fb9-10a9-3891-b601-42032efe334d"
                 },
                 "labelIndex": 1,
                 "zIndex": 0,
@@ -1914,26 +1968,26 @@
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "99d969fb-b5c0-3756-9a05-107b4506ea4a",
-                "instanceIdentifier": "d639d410-019f-1000-0000-000058cad372",
+                "instanceIdentifier": "97bcf9f2-e332-3462-9c3f-05409e6793f6",
                 "source": {
                     "id": "106ec07b-4b78-3d78-8260-b05ab0d06282",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Extract User Info",
                     "comments": "",
-                    "instanceIdentifier": "d639cef6-019f-1000-0000-00002ce5b2de"
+                    "instanceIdentifier": "97376ee2-d697-3f6b-a70c-3213250efdba"
                 },
                 "destination": {
                     "id": "64c117d5-3fe0-39f3-8dec-29ae65adb0e5",
                     "type": "PROCESSOR",
-                    "groupId": "b75556ba-1754-3176-8680-971a3a6fca45",
+                    "groupId": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9",
                     "name": "Fetch Cart",
                     "comments": "",
-                    "instanceIdentifier": "d639cff8-019f-1000-ffff-ffffbf47dbc8"
+                    "instanceIdentifier": "569380e9-880b-31cb-8594-b9085f4f34c5"
                 },
                 "labelIndex": 1,
                 "zIndex": 0,
@@ -1948,7 +2002,7 @@
                 "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
                 "loadBalanceCompression": "DO_NOT_COMPRESS",
                 "componentType": "CONNECTION",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             }
         ],
         "labels": [],
@@ -1956,14 +2010,14 @@
         "controllerServices": [
             {
                 "identifier": "3eb20c39-602f-3054-b2bb-c7c2df4e2507",
-                "instanceIdentifier": "f63b8f3b-019f-1000-0000-000020371ba7",
+                "instanceIdentifier": "b3399d5c-6b6c-3e7b-bed0-b7d7d9d925d7",
                 "name": "WebClientServiceProvider",
                 "comments": "",
                 "type": "org.apache.nifi.web.client.provider.service.StandardWebClientServiceProvider",
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-web-client-provider-service-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Connect Timeout": "10 secs",
@@ -2031,25 +2085,25 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-services-api-nar",
-                            "version": "2026.8.4.2"
+                            "version": "2026.9.5.13"
                         }
                     }
                 ],
                 "scheduledState": "DISABLED",
                 "bulletinLevel": "WARN",
                 "componentType": "CONTROLLER_SERVICE",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             },
             {
                 "identifier": "2adb519d-ada8-3143-b72e-3d2845c782c1",
-                "instanceIdentifier": "d639c576-019f-1000-0000-00000c83b2c0",
+                "instanceIdentifier": "4be2fd45-a95f-32ea-b3df-74aec38f6553",
                 "name": "JsonTreeReader",
                 "comments": "",
                 "type": "org.apache.nifi.json.JsonTreeReader",
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-record-serialization-services-nar",
-                    "version": "2026.8.4.8"
+                    "version": "2026.9.5.13"
                 },
                 "properties": {
                     "Schema Branch": null,
@@ -2189,14 +2243,14 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-services-api-nar",
-                            "version": "2026.8.4.2"
+                            "version": "2026.9.5.13"
                         }
                     }
                 ],
                 "scheduledState": "DISABLED",
                 "bulletinLevel": "WARN",
                 "componentType": "CONTROLLER_SERVICE",
-                "groupIdentifier": "b75556ba-1754-3176-8680-971a3a6fca45"
+                "groupIdentifier": "045c5a1b-e2ea-3cbd-9c0e-05fc5a25ddc9"
             }
         ],
         "defaultFlowFileExpiration": "0 sec",
