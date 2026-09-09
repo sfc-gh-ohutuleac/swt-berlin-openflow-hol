@@ -1,0 +1,89 @@
+{#-
+  Openflow Multi-Tenant Demo Lab - Per-User Provisioning Template
+  Renders one identical block per attendee (only the id changes): an isolated
+  database (no pre-created tables - attendees build/own their destination
+  tables as part of the flow) and a role that doubles as their login role AND
+  their Openflow runtime execute-as role, plus a user.
+
+  All shared/common privileges (deployment USAGE, self-service runtime
+  creation, EAI USAGE, warehouse, shared infra access) live on the single
+  SWTBER27_ATTENDEE_RL role (created in admin_setup.sql), which every
+  per-user role inherits via GRANT ROLE. Per-user roles hold ONLY their own
+  database ownership - nothing else is granted directly to them.
+
+  DUAL-MODE template - two ways to supply the attendee list:
+    1. Local render (render_provisioning.py, python+jinja2): passes `users`
+       directly as a list of {id, password} dicts, loaded from users.yml.
+    2. Server-side (Snowsight `EXECUTE IMMEDIATE FROM ... USING (...)`): the
+       USING clause only accepts scalars, not lists - so instead pass a
+       single `user_csv` string of `id:password` pairs separated by commas
+       (e.g. 'user01:Ab12cd34,user02:Ef56gh78'), and this template derives
+       the same `users` list from it below. See README.md for the full
+       EXECUTE IMMEDIATE FROM command and how to build user_csv.
+
+  Also expects: attendee_role (name of the shared role), warehouse.
+
+  Run the rendered output as ACCOUNTADMIN. Idempotent (CREATE ... IF NOT
+  EXISTS throughout) - safe to re-run after adding users.
+-#}
+--!jinja
+-- ============================================================================
+-- Openflow Multi-Tenant Demo Lab - Pilot User Provisioning
+-- GENERATED/TEMPLATE FILE - see README.md for both ways to run this
+-- (local render_provisioning.py, or server-side EXECUTE IMMEDIATE FROM).
+--
+-- Prerequisite: {{ attendee_role }} must already exist (created in
+-- admin_setup.sql) with all shared privileges granted to it.
+-- ============================================================================
+{% if users is not defined %}
+{%- set users = [] -%}
+{%- for pair in user_csv.split(',') -%}
+  {%- set parts = pair.split(':') -%}
+  {%- set _ = users.append({'id': parts[0], 'password': parts[1]}) -%}
+{%- endfor %}
+{% endif %}
+
+USE ROLE ACCOUNTADMIN;
+
+{% for user in users %}
+-- ----------------------------------------------------------------------------
+-- {{ user.id | upper }}
+-- ----------------------------------------------------------------------------
+
+-- Isolated, empty database - attendees build/own their destination table(s)
+-- as part of the flow; nothing is pre-created here.
+CREATE DATABASE IF NOT EXISTS SWTBER27_{{ user.id | upper }}
+  COMMENT = 'Openflow HoL sandbox for {{ user.id }}. [openflow]';
+
+CREATE SCHEMA IF NOT EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC;
+
+-- Role: doubles as login role AND Openflow runtime execute-as role.
+-- Holds ONLY database ownership directly - everything else comes from
+-- inheriting the shared attendee role below.
+CREATE ROLE IF NOT EXISTS SWTBER27_{{ user.id | upper }}_RL
+  COMMENT = 'Openflow HoL login/execute-as role for {{ user.id }}. [openflow]';
+
+GRANT OWNERSHIP ON DATABASE SWTBER27_{{ user.id | upper }} TO ROLE SWTBER27_{{ user.id | upper }}_RL COPY CURRENT GRANTS;
+
+-- Database ownership transfer does NOT cascade to already-created child
+-- schemas - transfer PUBLIC schema ownership explicitly too, or the
+-- attendee will find their own PUBLIC schema still owned by ACCOUNTADMIN.
+GRANT OWNERSHIP ON SCHEMA SWTBER27_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER27_{{ user.id | upper }}_RL COPY CURRENT GRANTS;
+
+-- Inherit all shared privileges (deployment USAGE, runtime creation, EAI,
+-- warehouse, shared infra access) from the common role - nothing granted
+-- directly to this per-user role beyond its own database.
+GRANT ROLE {{ attendee_role }} TO ROLE SWTBER27_{{ user.id | upper }}_RL;
+
+-- User
+CREATE USER IF NOT EXISTS SWTBER27_{{ user.id | upper }}
+  PASSWORD = '{{ user.password }}'
+  MUST_CHANGE_PASSWORD = TRUE
+  DEFAULT_ROLE = SWTBER27_{{ user.id | upper }}_RL
+  DEFAULT_WAREHOUSE = {{ warehouse }}
+  DEFAULT_SECONDARY_ROLES = ('ALL')
+  COMMENT = 'Openflow HoL pilot attendee. [openflow]';
+
+GRANT ROLE SWTBER27_{{ user.id | upper }}_RL TO USER SWTBER27_{{ user.id | upper }};
+
+{% endfor %}

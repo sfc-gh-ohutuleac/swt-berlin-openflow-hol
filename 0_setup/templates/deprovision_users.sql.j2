@@ -1,0 +1,40 @@
+{#-
+  Openflow Multi-Tenant Demo Lab - Per-User De-provisioning Template
+  Mirror of provision_users.sql.j2: tears down exactly what that template
+  creates, for the same attendee list. Does NOT touch the shared admin
+  layer (OPENFLOW_ADMIN, OPENFLOW_SHARED, deployment, EAI, event table).
+
+  Order matters: drop users first (so nothing references the role while
+  being dropped), then roles, then databases.
+
+  DUAL-MODE, same pattern as provision_users.sql.j2:
+    1. Local render: passes `users` as a list of {id, ...} dicts.
+    2. Server-side EXECUTE IMMEDIATE FROM: pass `user_ids` as a single
+       comma-separated string of ids (e.g. 'user01,user02') - no password
+       needed for teardown. See README.md.
+-#}
+--!jinja
+-- ============================================================================
+-- Openflow Multi-Tenant Demo Lab - Pilot User De-provisioning
+-- GENERATED/TEMPLATE FILE - see README.md for both ways to run this.
+--
+-- Review before running - this is destructive for the listed users' data.
+-- ============================================================================
+{% if users is not defined %}
+{%- set users = [] -%}
+{%- for uid in user_ids.split(',') -%}
+  {%- set _ = users.append({'id': uid}) -%}
+{%- endfor %}
+{% endif %}
+
+USE ROLE ACCOUNTADMIN;
+
+{% for user in users %}
+-- ----------------------------------------------------------------------------
+-- {{ user.id | upper }}
+-- ----------------------------------------------------------------------------
+DROP USER IF EXISTS SWTBER27_{{ user.id | upper }};
+DROP ROLE IF EXISTS SWTBER27_{{ user.id | upper }}_RL;
+DROP DATABASE IF EXISTS SWTBER27_{{ user.id | upper }};
+
+{% endfor %}

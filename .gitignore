@@ -216,3 +216,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+0_setup/users.yml
