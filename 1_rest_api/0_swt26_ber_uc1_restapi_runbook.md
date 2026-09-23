@@ -7,7 +7,7 @@ steps below.
 
 You should have received:
 - **Username**: `SWTBER27_USER<N>` (e.g. `SWTBER27_USER07`)
-- **Temporary password** (you'll be asked to change it on first login)
+- **Password** (keep it - you won't be asked to change it)
 
 Everywhere below, replace `<N>` with your own attendee number.
 
@@ -16,8 +16,7 @@ Everywhere below, replace `<N>` with your own attendee number.
 ## Step 1 - Log in and confirm your role
 
 1. Go to Snowsight and log in with your assigned username/password.
-2. You'll be prompted to set a new password on first login.
-3. Check the role selector (top left) - it should already default to
+2. Check the role selector (top left) - it should already default to
    `SWTBER27_USER<N>_RL`. This is your role for everything in this lab: it
    owns your database and doubles as your Openflow runtime's "execute-as"
    role.
@@ -97,9 +96,12 @@ Explore the API responses to decide the shape:
 - Users: `https://dummyjson.com/users`
 - Carts: `https://dummyjson.com/carts/user/1`
 
-If you want a ready-made DDL, `swt26_ber_setup.sql` in the repo's
-`1_rest_api/` folder contains a reference schema (including an optional
-Iceberg-table variant).
+If you want a ready-made DDL, `swt26_ber_setup.sql` on the shared lab stage
+contains a reference schema (including an optional Iceberg-table variant):
+
+```sql
+LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
+```
 
 ---
 
@@ -109,7 +111,16 @@ Choose one of the two paths below.
 
 **Fast path** — import the pre-built flow:
 
-1. Download `swt26_ber_flow.json` from the `swt-berlin-openflow-hol` repo, `1_rest_api/` folder.
+1. Download `swt26_ber_flow.json` from the shared lab stage - everything for this
+   lab lives in `OPENFLOW_SHARED` and your role can already read it:
+
+   ```sql
+   LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
+   GET @OPENFLOW_SHARED.INFRA.UC1_FILES/swt26_ber_flow.json file:///tmp/;
+   ```
+
+   In Snowsight you can also download it from **Data » Databases »
+   OPENFLOW_SHARED » INFRA » Stages » UC1_FILES**.
 2. On your NiFi canvas, drag a **Process Group** from the top toolbar onto the canvas.
 3. In the "Create process group" dialog, click the small **upload icon** on the right side of the Name field (tooltip: "Browse") and select `swt26_ber_flow.json`.
 4. Click **Add**. The flow appears as a Process Group — double-click to open it.
@@ -197,12 +208,12 @@ ORDER BY TIMESTAMP DESC
 LIMIT 50;
 ```
 
-If you'd rather browse the reference files (setup script, hints, flow.json)
-from inside Snowsight instead of GitHub, they're mirrored on a shared stage
-you have read access to:
+All reference files for this lab (setup script, hints, `flow.json`, this runbook)
+live on a shared stage in `OPENFLOW_SHARED` that your role can read - no GitHub
+access needed:
 
 ```sql
-LS @OPENFLOW_SHARED.GIT.SWT_BERLIN_HOL_REPO/branches/main/1_rest_api;
+LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
 ```
 
 ## Troubleshooting

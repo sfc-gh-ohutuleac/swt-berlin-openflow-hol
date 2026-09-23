@@ -1,0 +1,77 @@
+{#-
+  Openflow HoL - Per-User Gen2 Runtime Provisioning
+  Renders one CREATE OPENFLOW RUNTIME block per attendee.
+
+  Each runtime is created **as the attendee's own role**, inside the
+  attendee's own database - so the attendee OWNS it and can alter, terminate,
+  or create additional runtimes themselves after the lab.
+
+  Requires (from users.yml): users, deployment, eai.
+  Requires that provision_users.sql has already run (databases, roles, and the
+  CREATE OPENFLOW RUNTIME grant on each attendee's PUBLIC schema).
+
+  Run as ACCOUNTADMIN (it switches role per block via USE ROLE, which requires
+  the attendee roles to be granted to the executing role - provision_users.sql
+  grants every attendee role to SYSADMIN for exactly this).
+
+  IMPORTANT - cost and scale:
+    * Each runtime is standing compute. 200 runtimes running continuously is a
+      large bill. Provision only what the event actually needs.
+    * The Postgres CDC connector does NOT support multi-node runtimes, so
+      MIN_NODES and MAX_NODES are both pinned to 1. Scale by adding runtimes,
+      not nodes.
+    * Runtime provisioning takes 3-5 minutes each and is asynchronous. Run in
+      batches and let the wait calls confirm each batch before continuing.
+    * If SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS times out, the runtime is
+      still being created - re-run the wait, do NOT re-issue CREATE.
+
+  Idempotent (CREATE ... IF NOT EXISTS) - safe to re-run to fill gaps.
+-#}
+--!jinja
+-- ============================================================================
+-- Openflow HoL - Per-User Gen2 Runtime Provisioning
+-- GENERATED FILE - edit templates/provision_runtimes.sql.j2 instead.
+--
+-- Execute SELECTIVELY. Each block is self-contained; run only the blocks for
+-- the attendees you actually want runtimes for.
+-- ============================================================================
+{% if users is not defined %}
+{%- set users = [] -%}
+{%- for uid in user_ids.split(',') -%}
+  {%- set _ = users.append({'id': uid}) -%}
+{%- endfor %}
+{% endif %}
+
+USE ROLE ACCOUNTADMIN;
+
+{% for user in users %}
+-- ----------------------------------------------------------------------------
+-- {{ user.id | upper }}  ->  SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME
+-- ----------------------------------------------------------------------------
+USE ROLE SWTBER27_{{ user.id | upper }}_RL;
+
+CREATE OPENFLOW RUNTIME IF NOT EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME
+  IN DEPLOYMENT {{ deployment }}
+  NODE_TYPE = SMALL
+  MIN_NODES = 1
+  MAX_NODES = 1
+  EXECUTE_AS_ROLE = SWTBER27_{{ user.id | upper }}_RL
+  EXTERNAL_ACCESS_INTEGRATIONS = ({{ eai }})
+  DISPLAY_NAME = '{{ user.id | upper }} Runtime'
+  COMMENT = 'Openflow HoL runtime for {{ user.id }}, owned by the attendee. [openflow]';
+
+USE ROLE ACCOUNTADMIN;
+
+{% endfor %}
+-- ----------------------------------------------------------------------------
+-- Wait for all runtimes to become ACTIVE (3-5 minutes each, in parallel).
+-- Split this across batches if you provisioned many at once.
+-- ----------------------------------------------------------------------------
+{% for user in users %}
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(900, 'ACTIVE', 'SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME') AS {{ user.id }}_status;
+{% endfor %}
+
+-- ----------------------------------------------------------------------------
+-- Verification
+-- ----------------------------------------------------------------------------
+SHOW OPENFLOW RUNTIMES IN ACCOUNT;

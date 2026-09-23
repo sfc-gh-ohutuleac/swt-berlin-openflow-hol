@@ -1,0 +1,54 @@
+{#-
+  Openflow HoL - Per-User Gen2 Runtime De-provisioning
+
+  Reverses provision_runtimes.sql.j2. Uses the documented Gen2 teardown order:
+      SUSPEND -> TERMINATE [CASCADE] -> DROP
+
+  TERMINATE CASCADE terminates every connector inside the runtime first. Plain
+  TERMINATE FAILS if the runtime still contains connectors, so CASCADE is used
+  here - attendees will normally have created a connector.
+
+  Requires (from users.yml): users.
+  Run as ACCOUNTADMIN (attendee roles are granted to SYSADMIN by
+  provision_users.sql, so USE ROLE works).
+
+  IMPORTANT - replication slots leak:
+    Dropping an Openflow connector does NOT drop its PostgreSQL replication
+    slot. Orphaned slots pin WAL forever and will eventually exhaust
+    max_replication_slots and fill the instance's storage. After running this,
+    clean up on the Postgres side - see section 8 of
+    2_cdc/swt26_ber_uc2_postgres_setup.sql.
+-#}
+--!jinja
+-- ============================================================================
+-- Openflow HoL - Per-User Gen2 Runtime De-provisioning
+-- GENERATED FILE - edit templates/deprovision_runtimes.sql.j2 instead.
+--
+-- DESTRUCTIVE. Review before running, and run only the blocks you mean.
+-- ============================================================================
+{% if users is not defined %}
+{%- set users = [] -%}
+{%- for uid in user_ids.split(',') -%}
+  {%- set _ = users.append({'id': uid}) -%}
+{%- endfor %}
+{% endif %}
+
+USE ROLE ACCOUNTADMIN;
+
+{% for user in users %}
+-- ----------------------------------------------------------------------------
+-- {{ user.id | upper }}
+-- ----------------------------------------------------------------------------
+USE ROLE SWTBER27_{{ user.id | upper }}_RL;
+
+ALTER OPENFLOW RUNTIME IF EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME SUSPEND;
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(600, 'SUSPENDED', 'SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME');
+
+ALTER OPENFLOW RUNTIME IF EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME TERMINATE CASCADE;
+
+DROP OPENFLOW RUNTIME IF EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME;
+
+USE ROLE ACCOUNTADMIN;
+
+{% endfor %}
+SHOW OPENFLOW RUNTIMES IN ACCOUNT;

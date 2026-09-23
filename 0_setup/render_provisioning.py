@@ -27,7 +27,7 @@ def load_context(users_file: pathlib.Path) -> dict:
     with open(users_file) as f:
         data = yaml.safe_load(f)
 
-    required_keys = {"attendee_role", "warehouse", "users"}
+    required_keys = {"attendee_role", "warehouse", "deployment", "eai", "users"}
     missing = required_keys - data.keys()
     if missing:
         raise ValueError(f"{users_file} is missing required keys: {sorted(missing)}")
@@ -76,8 +76,10 @@ def main() -> None:
     targets = []
     if args.only in (None, "provision"):
         targets.append(("provision_users.sql.j2", "provision_users.sql"))
+        targets.append(("provision_runtimes.sql.j2", "provision_runtimes.sql"))
     if args.only in (None, "deprovision"):
         targets.append(("deprovision_users.sql.j2", "deprovision_users.sql"))
+        targets.append(("deprovision_runtimes.sql.j2", "deprovision_runtimes.sql"))
 
     for template_name, output_name in targets:
         output_path = render(template_name, context, output_name)
