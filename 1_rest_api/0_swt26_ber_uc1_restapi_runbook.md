@@ -141,6 +141,16 @@ Choose one of the two paths below.
 5. **Enable the two controller services.** Right-click the canvas inside the group ->
    **Controller Services**, then enable `JsonTreeReader` and
    `StandardWebClientServiceProvider`. They ship with the flow but arrive disabled.
+
+   Controller services are shared, long-lived services that processors reference
+   instead of configuring themselves. Both are used by `PublishSnowpipeStreaming`:
+
+   | Service | What it does |
+   |---|---|
+   | `JsonTreeReader` | Parses the JSON in the FlowFile content into a record (its **Record Reader**) |
+   | `StandardWebClientServiceProvider` | The HTTP client it uses to call the Snowpipe Streaming API |
+
+   A processor cannot start while a service it references is disabled.
 6. **Fill in the blanks on the write processors.** The imported flow contains two
    `PublishSnowpipeStreaming` processors (one for a standard table, one for the
    Iceberg bonus). Both intentionally ship with **`Database` and `Pipe` left
@@ -151,6 +161,9 @@ Choose one of the two paths below.
    |---|---|---|
    | `Write to USER_SPENDING` | `SWTBER27_USER<N>` | `<YOUR_TABLE_NAME>-STREAMING` |
    | `Write to USER_SPENDING_ICEBERG` | `SWTBER27_USER<N>` | `<YOUR_ICEBERG_TABLE>-STREAMING` |
+
+   The pipe name must follow the `<YOUR_TABLE_NAME>-STREAMING` convention - that
+   suffix is how Snowflake resolves which table to write to (see below).
 
    If you are skipping the Iceberg bonus, just delete the second processor.
 
@@ -190,14 +203,41 @@ Configure `PublishSnowpipeStreaming`:
 | Offset Token End Expression | `${user_id}` |
 | Channel Group | `SHARED` |
 
-Leave `Role` empty - the processor then uses your runtime's execute-as role
-(`SWTBER27_USER<N>_RL`), which is exactly what you want.
-
 Auto-terminate all four relationships: `success`, `failure`, `invalid`, `empty`.
 
-You don't need to create the pipe yourself - Snowflake auto-creates
-`<YOUR_TABLE_NAME>-STREAMING` on first use, as long as the table itself
-already exists.
+#### How the processor finds your table: the default pipe
+
+You never create the pipe yourself. Snowflake provides a **default pipe** for
+every table, created on demand the first time something streams to it. Its name
+is derived from the table:
+
+| Table | Default pipe |
+|---|---|
+| `USER_SPENDING` | `USER_SPENDING-STREAMING` |
+| `USER_SPENDING_ICEBERG` | `USER_SPENDING_ICEBERG-STREAMING` |
+
+So `Database` + `Schema` + `Pipe` is what resolves the target table - the
+`-STREAMING` suffix is the convention that links pipe to table. The **table must
+already exist**; only the pipe is auto-created.
+
+The pipe is the server-side processing layer: it validates the incoming schema
+and maps fields to columns using `MATCH_BY_COLUMN_NAME`. That is why the JSON
+field names produced by `AttributesToJSON` have to match your column names -
+`user_id` lands in `USER_ID`, `cart_total` in `CART_TOTAL`, and so on.
+
+The default pipe is fully Snowflake-managed (no `CREATE`, `ALTER`, or `DROP`),
+but you can inspect it:
+
+```sql
+SHOW PIPES IN SCHEMA SWTBER27_USER<N>.PUBLIC;
+SHOW CHANNELS IN PIPE SWTBER27_USER<N>.PUBLIC."USER_SPENDING-STREAMING";
+```
+
+If you needed in-flight transformations (reordering columns, casting, applying
+expressions) you would create a named pipe with `CREATE PIPE` instead - the
+default pipe deliberately does not support them.
+
+Reference: [The PIPE object](https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-pipe-object)
 
 **Bonus**: once the regular write works, duplicate the processor and change
 only the Pipe property to point at a second, Iceberg-backed table
@@ -215,12 +255,18 @@ There are two ways to start the flow:
 3. Right-click the `Trigger` processor -> **Run Once**.
 4. Wait ~20-30 seconds for data to flow through (a little longer for the Iceberg table to commit).
 
-**Option B: Start the entire process group at once**
+**Option B: Start the whole process group - this runs the flow immediately** *(simplest)*
+
+Starting the process group starts every processor in it, including the
+`Trigger`. The `Trigger` fires straight away, so the flow runs as soon as you
+hit Start - there is no separate "Run Once" step.
 
 1. Navigate up to the canvas level where your process group sits — click **Openflow** in the bottom-left corner of the canvas to go back to the root level.
-2. Right-click the process group -> **Start**.
-3. This starts all processors including the `Trigger`, which will fire on its 1-hour schedule. To trigger immediately, go back inside the group, right-click the `Trigger` processor (now running) and select **Run Once** — note that **Run Once is only available when the processor is stopped**, so you may need to stop it first, then use Run Once.
-4. Wait ~20-30 seconds for data to flow through (a little longer for the Iceberg table to commit).
+2. Right-click the process group -> **Start**. The flow runs immediately.
+3. Wait ~20-30 seconds for data to flow through (a little longer for the Iceberg table to commit).
+
+Afterwards the `Trigger` stays running and will fire again on its 1-hour
+schedule. Stop it (or the whole group) once you've verified the data.
 
 ## Step 4.5 - Run it again (and see exactly-once delivery in action)
 
@@ -239,7 +285,6 @@ To actually re-run with fresh data, pick one:
 |---|---|---|
 | **New channel group** | Change `Channel Group` from `SHARED` to `SHARED-2` | Quickest one-off reset |
 | **Disable offset tracking** | Set `Offset Tracking Resolution` to `Disabled` | Best for repeated demos - inserts every time |
-| **Clear processor state** | Stop the processor -> right-click -> **View State** -> **Clear State** | Not available in every Openflow UI version |
 
 In all cases, truncate the table first so you do not end up with duplicates:
 
@@ -303,19 +348,11 @@ LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
   streaming channel is out of sync with Snowflake, usually after a processor
   or runtime restart. Fix: change the `Channel Group` property to a new name
   (e.g. `SHARED-2`) to open a fresh channel.
-- **Processor shows "not a valid Processor type"** - the flow references
-  `PutSnowpipeStreaming2`, which was deprecated in Runtime Extensions
-  2026.8.4.8 and removed later. Delete the ghosted processor and add
-  `PublishSnowpipeStreaming` instead (config table in Step 3.2). Note that
-  `Connection Strategy` is no longer a property.
 - **Processor won't start / shows invalid** - most often a controller service
   is created but not **enabled**, or `Database` / `Pipe` are still empty on the
   imported flow. Hover the warning triangle to see the exact reason.
 - **"Run Once" is greyed out** - it is only available on a **stopped**
   processor. Stop the Trigger, then use Run Once.
 - **Second run inserts nothing** - expected. See Step 4.5 (offset tracking).
-- **Login into the Openflow canvas fails / blank screen** - make sure your
-  *active* role is `SWTBER27_USER<N>_RL`, not `ACCOUNTADMIN` or any admin
-  role (Openflow runtimes reject `ACCOUNTADMIN` as the active role).
 - **Can't see the shared deployment** - contact the lab admin; you should
   have `USAGE` on it granted automatically.
