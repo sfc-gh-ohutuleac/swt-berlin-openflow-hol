@@ -1,5 +1,5 @@
 ================================================================================
-TECHUP27 - Easy Lab Cheat Sheet
+SWT BERLIN 26 - Openflow HoL (UC1: REST API) - Cheat Sheet
 "User Spending Enrichment" - DummyJSON Users + Carts -> Snowflake
 ================================================================================
 
@@ -8,51 +8,60 @@ GOAL
 Fetch 30 users from an API, enrich each with their shopping cart data from a
 second API call, and write the joined result to Snowflake via Snowpipe Streaming.
 
+Replace <N> with your own attendee number everywhere below.
+
 APIs USED (no auth, single host: dummyjson.com)
 -----------------------------------------------
 1. Users:  GET https://dummyjson.com/users?limit=30&select=id,firstName,lastName,email,address
 2. Carts:  GET https://dummyjson.com/carts/user/{userId}
+
+PROCESSOR DOCUMENTATION
+-----------------------
+Full processor index:
+  https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors
+
+Per-processor pages are linked in each step below.
 
 
 ================================================================================
 FLOW OVERVIEW (9 processors, top to bottom)
 ================================================================================
 
-  +---------------------------+
-  | 1. GenerateFlowFile       |  Trigger — kicks off the pipeline
-  +---------------------------+
+  +------------------------------+
+  | 1. GenerateFlowFile          |  Trigger - kicks off the pipeline
+  +------------------------------+
               |
-  +---------------------------+
-  | 2. InvokeHTTP             |  GET /users — fetches all 30 users as JSON array
-  +---------------------------+
+  +------------------------------+
+  | 2. InvokeHTTP                |  GET /users - fetches all 30 users as JSON array
+  +------------------------------+
               |
-  +---------------------------+
-  | 3. SplitJson              |  Split array into 30 individual FlowFiles
-  +---------------------------+
+  +------------------------------+
+  | 3. SplitJson                 |  Split array into 30 individual FlowFiles
+  +------------------------------+
               |
-  +---------------------------+
-  | 4. EvaluateJsonPath       |  Extract user fields into FlowFile attributes
-  +---------------------------+
+  +------------------------------+
+  | 4. EvaluateJsonPath          |  Extract user fields into FlowFile attributes
+  +------------------------------+
               |
-  +---------------------------+
-  | 5. InvokeHTTP             |  GET /carts/user/{id} — fetch cart for this user
-  +---------------------------+
+  +------------------------------+
+  | 5. InvokeHTTP                |  GET /carts/user/{id} - fetch cart for this user
+  +------------------------------+
               |
-  +---------------------------+
-  | 6. EvaluateJsonPath       |  Extract cart totals into FlowFile attributes
-  +---------------------------+
+  +------------------------------+
+  | 6. EvaluateJsonPath          |  Extract cart totals into FlowFile attributes
+  +------------------------------+
               |
-  +---------------------------+
-  | 7. UpdateAttribute        |  Set ingestion timestamp
-  +---------------------------+
+  +------------------------------+
+  | 7. UpdateAttribute           |  Set ingestion timestamp
+  +------------------------------+
               |
-  +---------------------------+
-  | 8. AttributesToJSON       |  Convert attributes -> flat JSON (FlowFile content)
-  +---------------------------+
+  +------------------------------+
+  | 8. AttributesToJSON          |  Convert attributes -> flat JSON (FlowFile content)
+  +------------------------------+
               |
-  +---------------------------+
-  | 9. PutSnowpipeStreaming   |  Write to TECHUP27.PUBLIC.USER_SPENDING
-  +---------------------------+
+  +------------------------------+
+  | 9. PublishSnowpipeStreaming  |  Write to SWTBER27_USER<N>.PUBLIC.USER_SPENDING
+  +------------------------------+
 
 
 ================================================================================
@@ -60,48 +69,90 @@ STEP-BY-STEP HINTS
 ================================================================================
 
 STEP 1: GenerateFlowFile
-  Name:       "Trigger (run once)"
-  Schedule:   1 hour (for lab, right-click > "Run Once" to trigger manually)
-  Custom Text: (leave empty / remove property)
-  Purpose:    Generates an empty FlowFile to kick off the pipeline
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/generateflowfile
 
-STEP 2: InvokeHTTP — Fetch Users
-  Name:       "Fetch Users"
-  HTTP Method: GET
-  HTTP URL:   https://dummyjson.com/users?limit=30&select=id,firstName,lastName,email,address
+  Name:        "Trigger (run once)"
+  Schedule:    1 hour (for lab, right-click > "Run Once" to trigger manually)
+  Custom Text: (leave empty / remove property)
+
+  WHY THIS PROCESSOR?
+  NiFi is event-driven: nothing happens until a FlowFile enters the pipeline.
+  GenerateFlowFile produces one empty FlowFile that acts as the "go" signal.
+  The 1-hour schedule keeps it from firing repeatedly during the lab; you
+  trigger it manually with "Run Once" instead.
+
+STEP 2: InvokeHTTP - Fetch Users
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/invokehttp
+
+  Name:           "Fetch Users"
+  HTTP Method:    GET
+  HTTP URL:       https://dummyjson.com/users?limit=30&select=id,firstName,lastName,email,address
   Auto-terminate: Original, Retry, No Retry, Failure
-  Connect:    "Response" relationship -> next processor
+  Connect:        "Response" relationship -> next processor
+
+  WHY THIS PROCESSOR?
+  InvokeHTTP is the generic HTTP client. The "Response" relationship carries
+  the API response body as the new FlowFile content; "Original" carries the
+  input FlowFile (discard it). The ?select= parameter trims the payload to
+  just the fields we need.
+
+  NOTE: This is the processor that requires the External Access Integration.
+  Without the EAI attached to your runtime, you get UnknownHostException.
 
 STEP 3: SplitJson
-  Name:       "Split Users"
-  JsonPath Expression: $.users[*]
-  Auto-terminate: original, failure
-  Connect:    "split" relationship -> next processor
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/splitjson
 
-STEP 4: EvaluateJsonPath — Extract User Info
-  Name:       "Extract User Info"
+  Name:                "Split Users"
+  JsonPath Expression: $.users[*]
+  Auto-terminate:      original, failure
+  Connect:             "split" relationship -> next processor
+
+  WHY THIS PROCESSOR?
+  The API returns ONE JSON object containing a "users" array. We need to
+  process each user independently (each needs its own cart lookup), so
+  SplitJson fans the array out into 30 separate FlowFiles - one per user.
+
+STEP 4: EvaluateJsonPath - Extract User Info
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/evaluatejsonpath
+
+  Name:        "Extract User Info"
   Destination: flowfile-attribute
   Return Type: auto-detect
-  Dynamic properties (add these manually):
-    user_id   = $.id
+  Dynamic properties (add these manually with the "+" button):
+    user_id    = $.id
     first_name = $.firstName
     last_name  = $.lastName
     email      = $.email
     city       = $.address.city
     country    = $.address.country
   Auto-terminate: failure, unmatched
-  Connect:    "matched" relationship -> next processor
+  Connect:        "matched" relationship -> next processor
 
-STEP 5: InvokeHTTP — Fetch Cart
-  Name:       "Fetch Cart"
-  HTTP Method: GET
-  HTTP URL:   https://dummyjson.com/carts/user/${user_id}
-              (uses Expression Language to insert the user_id attribute)
+  WHY THIS PROCESSOR?
+  We lift values out of the JSON body into FlowFile ATTRIBUTES (metadata).
+  Attributes survive even when the content gets overwritten by the next
+  InvokeHTTP call - which is exactly what we need, because step 5 replaces
+  the content with the cart response. This is how we "remember" the user
+  fields across the second API call.
+
+STEP 5: InvokeHTTP - Fetch Cart
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/invokehttp
+
+  Name:           "Fetch Cart"
+  HTTP Method:    GET
+  HTTP URL:       https://dummyjson.com/carts/user/${user_id}
   Auto-terminate: Original, Retry, No Retry, Failure
-  Connect:    "Response" relationship -> next processor
+  Connect:        "Response" relationship -> next processor
 
-STEP 6: EvaluateJsonPath — Extract Cart Totals
-  Name:       "Extract Cart Totals"
+  WHY THIS PROCESSOR?
+  This is the enrichment / lookup step. ${user_id} is NiFi Expression
+  Language reading the attribute set in step 4 - so each of the 30 FlowFiles
+  calls a different URL. This is the core pattern for joining two APIs.
+
+STEP 6: EvaluateJsonPath - Extract Cart Totals
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/evaluatejsonpath
+
+  Name:        "Extract Cart Totals"
   Destination: flowfile-attribute
   Return Type: auto-detect
   Dynamic properties:
@@ -110,122 +161,173 @@ STEP 6: EvaluateJsonPath — Extract Cart Totals
     total_products  = $.carts[0].totalProducts
     total_quantity  = $.carts[0].totalQuantity
   Auto-terminate: failure, unmatched
-  Connect:    "matched" relationship -> next processor
+  Connect:        "matched" relationship -> next processor
+
+  WHY THIS PROCESSOR?
+  Same pattern as step 4, applied to the cart response. After this processor,
+  the FlowFile carries BOTH the user attributes (step 4) and the cart
+  attributes - the join is complete, held entirely in attributes.
 
 STEP 7: UpdateAttribute
-  Name:       "Set Timestamp"
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/updateattribute
+
+  Name: "Set Timestamp"
   Dynamic properties:
     ingested_at = ${now():format('yyyy-MM-dd HH:mm:ss')}
-  Connect:    "success" relationship -> next processor
+  Connect: "success" relationship -> next processor
+
+  WHY THIS PROCESSOR?
+  Adds an ingestion timestamp. We format it as a STRING here (not a real
+  timestamp) because Snowpipe Streaming's TIMESTAMP parser is strict about
+  formats - hence INGESTED_AT is VARCHAR in the table DDL.
 
 STEP 8: AttributesToJSON
-  Name:       "Build Record"
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/attributestojson
+
+  Name:            "Build Record"
   Attributes List: user_id,first_name,last_name,email,city,country,cart_total,cart_discounted,total_products,total_quantity,ingested_at
-  Destination: flowfile-content
+  Destination:     flowfile-content
   Include Core Attributes: false
-  Null Value: false
-  Auto-terminate: failure
-  Connect:    "success" relationship -> next processor
+  Null Value:      false
+  Auto-terminate:  failure
+  Connect:         "success" relationship -> next processor
 
-  WHY THIS STEP?
-  PutSnowpipeStreaming reads FlowFile CONTENT as records (via the Record Reader).
-  The previous steps stored data in FlowFile ATTRIBUTES. This processor converts
-  those attributes into a flat JSON object in the FlowFile content so the Record
-  Reader can parse it.
+  WHY THIS PROCESSOR?
+  PublishSnowpipeStreaming reads FlowFile CONTENT as records (via the Record
+  Reader controller service). Everything so far lives in ATTRIBUTES. This
+  processor materialises those attributes into a flat JSON object in the
+  content so the Record Reader can parse it into a row.
 
-STEP 9: PutSnowpipeStreaming2 (write to regular table)
-  Name:       "Write to USER_SPENDING"
-  Processor type: PutSnowpipeStreaming2 (the "High-Performance Architecture" version)
-  
+STEP 9: PublishSnowpipeStreaming (write to regular table)
+  Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/publishsnowpipestreaming
+
+  Name:           "Write to USER_SPENDING"
+  Processor type: PublishSnowpipeStreaming
+
   Properties:
-    Authentication Strategy:        SNOWFLAKE_MANAGED
-    Connection Strategy:            STANDARD
-    Account:                        <your account, e.g. SFPSCOGS-DSAILLARD_AWS_DEMO>
-    User:                           unused (ignored with managed auth on SPCS)
-    Role:                           QUICKSTART_OPENFLOW_ROLE
-    Database:                       TECHUP27
-    Schema:                         PUBLIC
-    Pipe:                           USER_SPENDING-STREAMING
-    Web Client Service Provider:    <select the one you created>
-    Transfer Strategy:              ROWS
-    Offset Tracking Resolution:     FLOW_FILE
-    Offset Token Start Expression:  ${user_id}
-    Offset Token End Expression:    ${user_id}
-    Channel Group:                  SHARED
-  
-  Auto-terminate: success, failure, invalid
+    Authentication Strategy:      SNOWFLAKE_MANAGED
+    Destination Type:             Pipe
+    Role:                         SWTBER27_USER<N>_RL
+    Database:                     SWTBER27_USER<N>
+    Schema:                       PUBLIC
+    Pipe:                         USER_SPENDING-STREAMING
+    Web Client Service Provider:  <select the one you created>
+    Transfer Strategy:            ROWS
+    Offset Tracking Resolution:   FlowFile
+    Offset Token End Expression:  ${user_id}
+    Channel Group:                SHARED
+
+  Auto-terminate: success, failure, invalid, empty
   Connect: Build Record "success" -> Write to USER_SPENDING
 
+  WHY THIS PROCESSOR?
+  PublishSnowpipeStreaming is the current Snowpipe Streaming (High-Performance
+  Architecture) processor. It streams records into Snowflake over HTTP with
+  low latency and no warehouse required.
+
+  NOTE ON PROCESSOR HISTORY:
+  PutSnowpipeStreaming2 was DEPRECATED in Runtime Extensions 2026.8.4.8 and
+  REMOVED in a later release. If you see it referenced anywhere, or if an
+  imported flow shows "not a valid Processor type", use
+  PublishSnowpipeStreaming instead. Note also that "Connection Strategy" is
+  no longer a property on this processor.
+
   ABOUT THE PIPE NAME:
-  PutSnowpipeStreaming2 writes through a PIPE object, not directly to a table.
-  The pipe <TABLE_NAME>-STREAMING is auto-created by Snowflake on first use.
-  You do NOT need to create it manually.
+  With Destination Type = Pipe, the processor writes through a PIPE object,
+  not directly to a table. The pipe <TABLE_NAME>-STREAMING is auto-created by
+  Snowflake on first use - you do NOT create it manually. The TABLE, however,
+  must already exist.
 
   ABOUT OFFSET TOKENS:
-  Offset tokens track which records have been committed (for exactly-once delivery).
-  They MUST be numeric. We use ${user_id} because:
+  Offset tokens track which records have been committed (exactly-once
+  delivery). They MUST be numeric. We use ${user_id} because:
     - It's already a FlowFile attribute (no extra processing)
     - It's numeric (1-30)
-    - It's meaningful (you can inspect and know which user was last committed)
-    - For FLOW_FILE resolution with one record per FlowFile, start = end
-  In production with streaming data, you'd use a Kafka offset or sequence number.
+    - It's meaningful (you can tell which user was last committed)
+  In production with streaming data, you'd use a Kafka offset or sequence
+  number.
+
+  IMPORTANT: Because offsets are tracked, running the flow a second time
+  inserts NOTHING (user_id 1-30 are already committed). See "RE-RUNNING THE
+  FLOW" below.
 
   CONTROLLER SERVICES NEEDED:
-  Before configuring this processor, create TWO controller services:
-    1. JsonTreeReader:
-       Right-click canvas > "Controller Services" > "+" > "JsonTreeReader" > Add > Enable
-    2. StandardWebClientServiceProvider:
-       Right-click canvas > "Controller Services" > "+" > "StandardWebClientServiceProvider" > Add > Enable
-       (Used by PutSnowpipeStreaming2 for HTTP communication with Snowflake)
+  Before configuring this processor, create TWO controller services (see the
+  next section).
 
 
 ================================================================================
 CONTROLLER SERVICES NEEDED (2)
 ================================================================================
 
+Create both INSIDE your Process Group, then ENABLE them. A processor cannot
+start while a controller service it references is disabled.
+
+How to create: right-click the canvas > "Controller Services" > "+" >
+search for the service > Add > Enable.
+
 1. JsonTreeReader
-   - Create inside the Process Group (not at root level)
-   - Default settings are fine (infer schema from content)
+   - Default settings are fine (infers schema from content)
    - Must be ENABLED before starting the flow
-   - Used by: PutSnowpipeStreaming2 (Record Reader)
+   - Used by: PublishSnowpipeStreaming, in the "Record Reader" property
+   - Purpose: parses the flat JSON in the FlowFile content into a record
+     that maps onto your table columns
 
 2. StandardWebClientServiceProvider
-   - Create inside the Process Group
    - Default settings are fine
    - Must be ENABLED before starting the flow
-   - Used by: PutSnowpipeStreaming2 (HTTP client for Snowpipe Streaming API)
+   - Used by: PublishSnowpipeStreaming, in the "Web Client Service Provider"
+     property
+   - Purpose: the HTTP client the processor uses to talk to the Snowpipe
+     Streaming REST API
+
+WHAT IS A CONTROLLER SERVICE?
+A shared, long-lived service that processors reference by name instead of
+each configuring the same thing themselves. Processors do the work;
+controller services are the tools they pick up to do it.
 
 
 ================================================================================
 GOTCHAS & TIPS
 ================================================================================
 
-1. EAI MUST BE ATTACHED before the InvokeHTTP processors can reach dummyjson.com.
-   If you get "UnknownHostException" bulletins, the EAI isn't attached to your runtime.
+1. EAI MUST BE ATTACHED before the InvokeHTTP processors can reach
+   dummyjson.com. If you get "UnknownHostException" bulletins, the EAI isn't
+   attached to your runtime.
 
-2. PutSnowpipeStreaming2 CANNOT write to tables with DEFAULT column values.
-   That's why INGESTED_AT is VARCHAR, not TIMESTAMP DEFAULT CURRENT_TIMESTAMP().
+2. THE TABLE MUST EXIST before the flow runs. The pipe is auto-created; the
+   table is not. Error ERR_TABLE_DOES_NOT_EXIST_NOT_AUTHORIZED means either
+   the table is missing OR your role lacks privileges on it.
 
-3. PutSnowpipeStreaming2 reads FlowFile CONTENT, not attributes.
-   You MUST use AttributesToJSON to materialize attributes into the content.
+3. PublishSnowpipeStreaming CANNOT write to tables with DEFAULT column values.
+   That's why INGESTED_AT is VARCHAR, not TIMESTAMP DEFAULT
+   CURRENT_TIMESTAMP().
 
-4. The "Response" relationship on InvokeHTTP contains the API response body.
+4. PublishSnowpipeStreaming reads FlowFile CONTENT, not attributes.
+   You MUST use AttributesToJSON to materialise attributes into the content.
+
+5. The "Response" relationship on InvokeHTTP contains the API response body.
    "Original" contains the input FlowFile (usually discard it).
 
-5. EvaluateJsonPath with Destination=flowfile-attribute keeps original content
-   but stores extracted values as attributes. The content is overwritten by the
-   next InvokeHTTP (which replaces it with the cart response).
+6. EvaluateJsonPath with Destination=flowfile-attribute keeps the original
+   content but stores extracted values as attributes. The content is
+   overwritten by the next InvokeHTTP (which replaces it with the cart
+   response) - the attributes survive.
 
-6. To avoid duplicates: only trigger once per lab session (1 hour schedule).
-   In production you'd use MERGE patterns or dedup views.
+7. Expression Language in the HTTP URL: ${user_id} reads the FlowFile
+   attribute set by the previous EvaluateJsonPath. This is how we
+   parameterise the second API call per user.
 
-7. Expression Language in HTTP URL: ${user_id} reads the FlowFile attribute
-   set by the previous EvaluateJsonPath. This is how we parameterize the
-   second API call per user.
+8. "Run Once" is only available on a STOPPED processor. Start every processor
+   except the Trigger, leave the Trigger stopped, then Run Once on it.
 
-8. FLOAT precision: Iceberg tables store FLOAT as IEEE 754 (Parquet native),
-   which may show precision artifacts (e.g., 13037.879882812 instead of 13037.88).
-   For exact monetary values, use DECIMAL(10,2) instead of FLOAT.
+9. FLOAT precision: Iceberg tables store FLOAT as IEEE 754 (Parquet native),
+   which may show precision artifacts (e.g. 13037.879882812 instead of
+   13037.88). For exact monetary values, use DECIMAL(10,2) instead of FLOAT.
+
+10. STALE_CONTINUATION_TOKEN_SEQUENCER error means the streaming channel is
+    out of sync (usually after a processor or runtime restart). Fix: change
+    the Channel Group property to a new name, e.g. SHARED-2.
 
 
 ================================================================================
@@ -234,14 +336,14 @@ VERIFICATION
 
 After running the flow once (right-click Trigger > Run Once, wait ~20 seconds):
 
-  SELECT COUNT(*) FROM TECHUP27.PUBLIC.USER_SPENDING;
+  SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.USER_SPENDING;
   -- Expected: 30 rows
 
-  SELECT COUNT(*) FROM TECHUP27.PUBLIC.USER_SPENDING_ICEBERG;
-  -- Expected: 30 rows (may take up to 30s for Iceberg commit)
+  SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.USER_SPENDING_ICEBERG;
+  -- Expected: 30 rows (may take up to 30s for the Iceberg commit)
 
   SELECT USER_ID, FIRST_NAME, LAST_NAME, CITY, CART_TOTAL, INGESTED_AT
-  FROM TECHUP27.PUBLIC.USER_SPENDING
+  FROM SWTBER27_USER<N>.PUBLIC.USER_SPENDING
   ORDER BY CART_TOTAL DESC
   LIMIT 5;
 
@@ -249,66 +351,91 @@ After running the flow once (right-click Trigger > Run Once, wait ~20 seconds):
 
 
 ================================================================================
+RE-RUNNING THE FLOW
+================================================================================
+
+If you trigger the flow a second time, NOTHING new is inserted. This is not a
+bug - it's exactly-once delivery working as designed. Offset tokens 1-30
+(the user_ids) are already committed on the streaming channel, so Snowflake
+skips them.
+
+To demonstrate this: run the flow twice and note the row count stays at 30.
+
+TO ACTUALLY RE-RUN WITH FRESH DATA, pick one:
+
+  Option 1 - New channel group (simplest)
+    Change the Channel Group property on the processor from SHARED to
+    SHARED-2. A new channel has no offset history.
+
+  Option 2 - Disable offset tracking
+    Set Offset Tracking Resolution to "Disabled". Every FlowFile is then
+    inserted unconditionally, every run. Best choice for repeated demos.
+
+  Option 3 - Clear processor state
+    Stop the processor, right-click > View State > Clear State, start again.
+    (Not available in all Openflow UI versions - use Option 1 if missing.)
+
+In ALL cases, truncate the table first to avoid duplicates:
+
+  TRUNCATE TABLE SWTBER27_USER<N>.PUBLIC.USER_SPENDING;
+  TRUNCATE TABLE SWTBER27_USER<N>.PUBLIC.USER_SPENDING_ICEBERG;
+
+Also clear any queued FlowFiles on the canvas before re-triggering, otherwise
+leftover FlowFiles from a previous run get processed too and you see
+duplicates: right-click each connection > "Empty queue".
+
+
+================================================================================
 BONUS: ADD ICEBERG TABLE (after the regular flow works)
 ================================================================================
 
 The key insight: switching from a regular table to Iceberg is a ONE-PROPERTY
-change on the processor. Since we already use PutSnowpipeStreaming2 for the
-regular table, adding Iceberg is just:
-  1. Duplicate the processor
-  2. Change the Pipe property from USER_SPENDING-STREAMING
-     to USER_SPENDING_ICEBERG-STREAMING
+change on the processor. Same processor type, same auth, same everything -
+only the Pipe name differs.
 
-That's it. Same processor type, same auth, same config.
+STEP 10: Duplicate PublishSnowpipeStreaming for Iceberg
+  Name: "Write to USER_SPENDING_ICEBERG"
 
-STEP 10: Duplicate PutSnowpipeStreaming2 for Iceberg
-  Name:       "Write to USER_SPENDING_ICEBERG"
-  
-  ONLY DIFFERENCE FROM STEP 9:
-    Pipe:     USER_SPENDING_ICEBERG-STREAMING   (instead of USER_SPENDING-STREAMING)
-  
+  1. Right-click the existing processor > Copy, then paste on the canvas.
+  2. Change ONE property:
+       Pipe:  USER_SPENDING_ICEBERG-STREAMING
+              (instead of USER_SPENDING-STREAMING)
+
   Everything else is IDENTICAL:
-    Authentication Strategy:        SNOWFLAKE_MANAGED
-    Connection Strategy:            STANDARD
-    Account:                        <same>
-    User:                           unused
-    Role:                           QUICKSTART_OPENFLOW_ROLE
-    Database:                       TECHUP27
-    Schema:                         PUBLIC
-    Web Client Service Provider:    <same>
-    Transfer Strategy:              ROWS
-    Offset Tracking Resolution:     FLOW_FILE
-    Offset Token Start Expression:  ${user_id}
-    Offset Token End Expression:    ${user_id}
-    Channel Group:                  SHARED
-  
-  Auto-terminate: success, failure, invalid
+    Authentication Strategy:      SNOWFLAKE_MANAGED
+    Destination Type:             Pipe
+    Role:                         SWTBER27_USER<N>_RL
+    Database:                     SWTBER27_USER<N>
+    Schema:                       PUBLIC
+    Web Client Service Provider:  <same>
+    Transfer Strategy:            ROWS
+    Offset Tracking Resolution:   FlowFile
+    Offset Token End Expression:  ${user_id}
+    Channel Group:                SHARED
+
+  Auto-terminate: success, failure, invalid, empty
   Connect: Build Record "success" -> Write to USER_SPENDING_ICEBERG
   (Fan-out: Build Record now has TWO outgoing "success" connections)
 
-ICEBERG TABLE DDL (already in setup script):
-  CREATE ICEBERG TABLE TECHUP27.PUBLIC.USER_SPENDING_ICEBERG (
-      USER_ID         INT,    -- INT not NUMBER (Iceberg requires explicit precision)
+ICEBERG TABLE DDL (already in swt26_ber_table_setup.sql):
+  CREATE ICEBERG TABLE USER_SPENDING_ICEBERG (
+      USER_ID         INT,    -- INT, not NUMBER (Iceberg needs explicit precision)
       FIRST_NAME      VARCHAR,
       ...
   )
   CATALOG = 'SNOWFLAKE'
   EXTERNAL_VOLUME = 'SNOWFLAKE_MANAGED';  -- No S3/Azure config needed
 
-WHAT TO HIGHLIGHT TO ATTENDEES:
-  - "Look: same processor, same config, only the pipe name changed"
-  - The pipe <TABLE_NAME>-STREAMING is auto-created by Snowflake on first use
-  - No manual PIPE creation needed
-  - SNOWFLAKE_MANAGED = Snowflake handles all Iceberg storage internally
+WHAT TO NOTICE:
+  - Same processor, same config - only the pipe name changed
+  - The pipe <TABLE_NAME>-STREAMING is auto-created on first use
+  - SNOWFLAKE_MANAGED means Snowflake handles all Iceberg storage internally
   - The Iceberg table stores data as Parquet + Iceberg metadata
   - Same query syntax: SELECT * FROM USER_SPENDING_ICEBERG works identically
 
 GOTCHAS:
   - Iceberg DDL requires INT (not NUMBER without precision)
-  - FLOAT shows IEEE 754 precision artifacts in Iceberg (e.g., 13037.879882812
+  - FLOAT shows IEEE 754 precision artifacts in Iceberg (e.g. 13037.879882812
     instead of 13037.88). Use DECIMAL(10,2) for exact monetary values.
   - Data visibility may take up to 30s (Iceberg metadata commit latency)
-  - The "invalid" relationship must be auto-terminated (3 relationships total)
-  - DO NOT use PutSnowpipeStreaming (classic) with Iceberg Enabled=true for
-    SNOWFLAKE_MANAGED storage — it will hang indefinitely. Always use
-    PutSnowpipeStreaming2 (HPA) for Iceberg.
+  - The "invalid" and "empty" relationships must be auto-terminated too

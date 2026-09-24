@@ -77,6 +77,19 @@ Your runtime (`SWTBER27_USER<N>_RUNTIME`) has been pre-created and is already **
 
 You own this runtime - nobody else can see or modify it.
 
+### Why your flow can reach the internet
+
+Openflow runtimes run inside Snowflake and have **no outbound network access
+by default**. Two objects change that, and both are already set up for you:
+
+- A **network rule** allowing egress to `dummyjson.com:443`
+- An **External Access Integration** (`SWTBER27_LAB_EAI`) that wraps that rule
+  and is **attached to your runtime**
+
+Without the EAI attached, the `InvokeHTTP` processors would fail with
+`UnknownHostException`. This is one of the first things to check whenever an
+Openflow flow can't reach an external system.
+
 ## Step 3 - Build the flow
 
 Goal: fetch 30 users from a public API, enrich each with their shopping
@@ -96,11 +109,12 @@ Explore the API responses to decide the shape:
 - Users: `https://dummyjson.com/users`
 - Carts: `https://dummyjson.com/carts/user/1`
 
-If you want a ready-made DDL, `swt26_ber_setup.sql` on the shared lab stage
+If you want a ready-made DDL, `swt26_ber_table_setup.sql` on the shared lab stage
 contains a reference schema (including an optional Iceberg-table variant):
 
 ```sql
 LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
+GET @OPENFLOW_SHARED.INFRA.UC1_FILES/swt26_ber_table_setup.sql file:///tmp/;
 ```
 
 ---
@@ -124,6 +138,21 @@ Choose one of the two paths below.
 2. On your NiFi canvas, drag a **Process Group** from the top toolbar onto the canvas.
 3. In the "Create process group" dialog, click the small **upload icon** on the right side of the Name field (tooltip: "Browse") and select `swt26_ber_flow.json`.
 4. Click **Add**. The flow appears as a Process Group — double-click to open it.
+5. **Enable the two controller services.** Right-click the canvas inside the group ->
+   **Controller Services**, then enable `JsonTreeReader` and
+   `StandardWebClientServiceProvider`. They ship with the flow but arrive disabled.
+6. **Fill in the blanks on the write processors.** The imported flow contains two
+   `PublishSnowpipeStreaming` processors (one for a standard table, one for the
+   Iceberg bonus). Both intentionally ship with **`Database` and `Pipe` left
+   empty** so you set your own - that is why they show as invalid on import.
+   Open each one (right-click -> **Configure** -> **Properties**) and set:
+
+   | Processor | Database | Pipe |
+   |---|---|---|
+   | `Write to USER_SPENDING` | `SWTBER27_USER<N>` | `<YOUR_TABLE_NAME>-STREAMING` |
+   | `Write to USER_SPENDING_ICEBERG` | `SWTBER27_USER<N>` | `<YOUR_ICEBERG_TABLE>-STREAMING` |
+
+   If you are skipping the Iceberg bonus, just delete the second processor.
 
 **Manual path** *(recommended at least once)* — follow `swt26_ber_hints.txt` to build these processors yourself:
 
@@ -139,6 +168,9 @@ GenerateFlowFile (Trigger)
       -> PublishSnowpipeStreaming (Pipe: <YOUR_TABLE_NAME>-STREAMING) -> your table
 ```
 
+(The pre-built flow adds a second `PublishSnowpipeStreaming` fanned out from
+`AttributesToJSON` for the Iceberg bonus - see the end of this step.)
+
 Before configuring the `PublishSnowpipeStreaming` processor, create two
 controller services inside the process group (default settings, then
 **Enable** both): `JsonTreeReader` and `StandardWebClientServiceProvider`.
@@ -149,7 +181,6 @@ Configure `PublishSnowpipeStreaming`:
 |---|---|
 | Authentication Strategy | `SNOWFLAKE_MANAGED` |
 | Destination Type | `Pipe` |
-| Role | `SWTBER27_USER<N>_RL` |
 | Database | `SWTBER27_USER<N>` |
 | Schema | `PUBLIC` |
 | Pipe | `<YOUR_TABLE_NAME>-STREAMING` |
@@ -158,6 +189,11 @@ Configure `PublishSnowpipeStreaming`:
 | Offset Tracking Resolution | `FlowFile` |
 | Offset Token End Expression | `${user_id}` |
 | Channel Group | `SHARED` |
+
+Leave `Role` empty - the processor then uses your runtime's execute-as role
+(`SWTBER27_USER<N>_RL`), which is exactly what you want.
+
+Auto-terminate all four relationships: `success`, `failure`, `invalid`, `empty`.
 
 You don't need to create the pipe yourself - Snowflake auto-creates
 `<YOUR_TABLE_NAME>-STREAMING` on first use, as long as the table itself
@@ -186,6 +222,35 @@ There are two ways to start the flow:
 3. This starts all processors including the `Trigger`, which will fire on its 1-hour schedule. To trigger immediately, go back inside the group, right-click the `Trigger` processor (now running) and select **Run Once** — note that **Run Once is only available when the processor is stopped**, so you may need to stop it first, then use Run Once.
 4. Wait ~20-30 seconds for data to flow through (a little longer for the Iceberg table to commit).
 
+## Step 4.5 - Run it again (and see exactly-once delivery in action)
+
+Trigger the flow a second time and check the row count. It stays at **30** -
+nothing new was inserted.
+
+That is not a bug. `PublishSnowpipeStreaming` tracks **offset tokens** for
+exactly-once delivery. We configured `Offset Token End Expression = ${user_id}`,
+so tokens 1-30 are already committed on the channel and Snowflake skips them.
+This is what protects you from duplicates when a flow retries or a runtime
+restarts.
+
+To actually re-run with fresh data, pick one:
+
+| Option | How | When to use |
+|---|---|---|
+| **New channel group** | Change `Channel Group` from `SHARED` to `SHARED-2` | Quickest one-off reset |
+| **Disable offset tracking** | Set `Offset Tracking Resolution` to `Disabled` | Best for repeated demos - inserts every time |
+| **Clear processor state** | Stop the processor -> right-click -> **View State** -> **Clear State** | Not available in every Openflow UI version |
+
+In all cases, truncate the table first so you do not end up with duplicates:
+
+```sql
+TRUNCATE TABLE SWTBER27_USER<N>.PUBLIC.<YOUR_TABLE_NAME>;
+```
+
+Also empty any queued FlowFiles left on the canvas before re-triggering -
+otherwise leftovers from the previous run get processed too and you see
+duplicates: right-click each connection -> **Empty queue**.
+
 ## Step 5 - Verify
 
 Back in a Snowsight SQL worksheet, run (as your own role/user):
@@ -208,13 +273,20 @@ ORDER BY TIMESTAMP DESC
 LIMIT 50;
 ```
 
-All reference files for this lab (setup script, hints, `flow.json`, this runbook)
-live on a shared stage in `OPENFLOW_SHARED` that your role can read - no GitHub
-access needed:
+All reference files for this lab live on a shared stage in `OPENFLOW_SHARED`
+that your role can read - no GitHub access needed:
 
 ```sql
 LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
 ```
+
+| File | What it is |
+|---|---|
+| `0_swt26_ber_uc1_restapi_runbook.md` | This runbook |
+| `swt26_ber_table_setup.sql` | Reference DDL for the destination tables |
+| `swt26_ber_flow.json` | Pre-built flow for the fast path |
+| `swt26_ber_hints.txt` | Step-by-step cheat sheet with every processor config |
+| `swt26_ber_summary.txt` | Lab overview and learning objectives |
 
 ## Troubleshooting
 
@@ -222,6 +294,26 @@ LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
   selected when creating the runtime. Go to your runtime's "..." menu ->
   "External access integrations" -> select `SWTBER27_LAB_EAI` -> Save (no
   restart needed).
+- **`ERR_TABLE_DOES_NOT_EXIST_NOT_AUTHORIZED` on the write processor** - the
+  error conflates two causes. Either the destination table does not exist yet
+  (create it - Step 3.1; the *pipe* is auto-created but the *table* is not), or
+  the `Database` property is still empty / pointing at the wrong database.
+  Check with `SHOW TABLES IN SCHEMA SWTBER27_USER<N>.PUBLIC;`.
+- **`STALE_CONTINUATION_TOKEN_SEQUENCER` on the write processor** - the
+  streaming channel is out of sync with Snowflake, usually after a processor
+  or runtime restart. Fix: change the `Channel Group` property to a new name
+  (e.g. `SHARED-2`) to open a fresh channel.
+- **Processor shows "not a valid Processor type"** - the flow references
+  `PutSnowpipeStreaming2`, which was deprecated in Runtime Extensions
+  2026.8.4.8 and removed later. Delete the ghosted processor and add
+  `PublishSnowpipeStreaming` instead (config table in Step 3.2). Note that
+  `Connection Strategy` is no longer a property.
+- **Processor won't start / shows invalid** - most often a controller service
+  is created but not **enabled**, or `Database` / `Pipe` are still empty on the
+  imported flow. Hover the warning triangle to see the exact reason.
+- **"Run Once" is greyed out** - it is only available on a **stopped**
+  processor. Stop the Trigger, then use Run Once.
+- **Second run inserts nothing** - expected. See Step 4.5 (offset tracking).
 - **Login into the Openflow canvas fails / blank screen** - make sure your
   *active* role is `SWTBER27_USER<N>_RL`, not `ACCOUNTADMIN` or any admin
   role (Openflow runtimes reject `ACCOUNTADMIN` as the active role).

@@ -211,15 +211,14 @@ CREATE EXTERNAL ACCESS INTEGRATION IF NOT EXISTS SWTBER27_LAB_EAI
 -- 6b. UC1 lab resources stage
 --
 --     Attendee-facing copies of the UC1 files so the lab does not depend on
---     GitHub access or on the upstream repo's file naming (the connected git
---     repository still carries the older techup27_* names).
+--     GitHub access.
 --
 --     Populate once from a machine with the repo checked out:
---       PUT 'file://.../1_rest_api/swt26_ber_flow.json'    @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/swt26_ber_hints.txt'    @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/swt26_ber_setup.sql'    @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/swt26_ber_summary.txt'  @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/0_..._runbook.md'       @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_flow.json'          @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_hints.txt'          @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_table_setup.sql'    @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_summary.txt'        @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/0_swt26_ber_uc1_restapi_runbook.md' @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
 -- ---------------------------------------------------------------------------
 CREATE STAGE IF NOT EXISTS OPENFLOW_SHARED.INFRA.UC1_FILES
   DIRECTORY = (ENABLE = TRUE)

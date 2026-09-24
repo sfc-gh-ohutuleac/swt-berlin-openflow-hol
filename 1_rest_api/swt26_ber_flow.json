@@ -976,15 +976,14 @@
                     "Offset Tracking Timeout": "90 s",
                     "Channel Group": "SHARED",
                     "Schema": "PUBLIC",
-                    "Pipe": "USER_SPENDING_ICEBERG-STREAMING",
+                    "Pipe": null,
                     "Offset Tracking Resolution": "FLOW_FILE",
                     "Private Key Service": null,
                     "Offset Token Record Pointer": null,
-                    "Connection Strategy": "STANDARD",
                     "Role": null,
                     "Authentication Strategy": "SNOWFLAKE_MANAGED",
                     "Offset Token End Expression": "${user_id}",
-                    "Database": "MARKUS_TEST",
+                    "Database": null,
                     "Channel Type": "STANDARD",
                     "File Fragment Count": "4",
                     "Channel Insert Timeout": "30 s",
@@ -1079,13 +1078,6 @@
                     "Offset Token Record Pointer": {
                         "name": "Offset Token Record Pointer",
                         "displayName": "Offset Token Record Pointer",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Connection Strategy": {
-                        "name": "Connection Strategy",
-                        "displayName": "Connection Strategy",
                         "identifiesControllerService": false,
                         "sensitive": false,
                         "dynamic": false
@@ -1388,7 +1380,7 @@
                     "Account": null,
                     "Offset Token Start Expression": null,
                     "User": null,
-                    "Table": "USER_SPENDING",
+                    "Table": null,
                     "Transfer Strategy": "ROWS",
                     "File Fragment Size": "64 MB",
                     "Offset Tracking Timeout": "90 s",
@@ -1398,15 +1390,14 @@
                     "Offset Tracking Resolution": "FLOW_FILE",
                     "Private Key Service": null,
                     "Offset Token Record Pointer": null,
-                    "Connection Strategy": "STANDARD",
                     "Role": null,
                     "Authentication Strategy": "SNOWFLAKE_MANAGED",
                     "Offset Token End Expression": "${user_id}",
-                    "Database": "MARKUS_TEST",
+                    "Database": null,
                     "Channel Type": "STANDARD",
                     "File Fragment Count": "4",
                     "Channel Insert Timeout": "30 s",
-                    "Destination Type": "TABLE",
+                    "Destination Type": "PIPE",
                     "Web Client Service Provider": "3eb20c39-602f-3054-b2bb-c7c2df4e2507"
                 },
                 "propertyDescriptors": {
@@ -1497,13 +1488,6 @@
                     "Offset Token Record Pointer": {
                         "name": "Offset Token Record Pointer",
                         "displayName": "Offset Token Record Pointer",
-                        "identifiesControllerService": false,
-                        "sensitive": false,
-                        "dynamic": false
-                    },
-                    "Connection Strategy": {
-                        "name": "Connection Strategy",
-                        "displayName": "Connection Strategy",
                         "identifiesControllerService": false,
                         "sensitive": false,
                         "dynamic": false
