@@ -119,7 +119,7 @@ own role inherits. Every attendee has exactly the same access.
 
 ---
 
-## Step 4 - Create and configure the connector
+## Step 4 - Install and configure the connector
 
 Choose **one** of the two paths below. Option A (guided setup) is the
 recommended route for the lab. Option B (SQL) is the same thing done
@@ -127,51 +127,222 @@ declaratively, and is how you'd automate this in the real world.
 
 ### Option A - Guided setup in Snowsight
 
-1. In **Ingestion » Openflow**, open the **Connectors** tab and click
-   **Create connector** (or from your runtime, **Add connector**).
-2. Pick **PostgreSQL** from the connector catalog.
-3. Choose your runtime, `SWTBER27_USER<N>_RUNTIME`, and give the connector a
-   name, e.g. `UC2_PG_CDC`.
-4. Work through the wizard steps, using the values from Step 3:
+#### 4.0 - First, download the JDBC driver
 
-   **Source**
-   | Field | Value |
-   |---|---|
-   | Source Database Connection URL | the `JDBC_URL` from Step 3 |
-   | Source Database Driver | upload `postgresql-42.7.4.jar` (see note below) |
-   | Source Database User | `swtber27_cdc` |
-   | Source Database Password | select the secret `SWTBER27_PG_CDC_SECRET` |
-   | Source Database Publication Name | `swtber27_cdc_pub` |
+The connector does **not** ship with the PostgreSQL driver - you supply it as a
+file. A copy is staged for you, and you can download it entirely in the browser:
+in Snowsight go to **Data » Databases » OPENFLOW_SHARED » PG » Stages »
+UC2_FILES**, find `postgresql-42.7.4.jar`, click the **`...`** menu on that row
+and choose **Download**.
 
-   **Replication table schema**
-   | Field | Value |
-   |---|---|
-   | Included Comma Separated Source Table Names | `public.sensors,public.sensor_readings` |
+![Download the JDBC driver from the UC2_FILES stage](screenshots/03_get_driver.png)
 
-   **Destination details**
-   | Field | Value |
-   |---|---|
-   | Snowflake Destination Database | `SWTBER27_USER<N>` |
-   | Snowflake Warehouse | `COMPUTE_WH` |
-   | Destination Schema Strategy | `SOURCE_SCHEMA` |
+Keep the file handy - you'll upload it in step 4.3.
 
-   Leave everything else at its default.
+> Alternative: download the same driver from
+> [Maven Central](https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar).
 
-5. Click through to finish, then **Start** the connector.
+#### 4.1 - Find the Gen 2 PostgreSQL connector
 
-> **The JDBC driver**: the connector does not ship with the PostgreSQL driver -
-> you supply it. A copy is staged for you in `OPENFLOW_SHARED`:
+Open **Openflow** and go to the **Connector library** tab. Type `postgres` in
+the search box.
+
+You will see **two connectors, both called "PostgreSQL", both by Snowflake**.
+They are not the same thing:
+
+![Two PostgreSQL connectors - pick the Gen 2 one](screenshots/01_install_connector.png)
+
+> **Pick the one badged `Gen 2`** (it is also badged `Preview`). Its description
+> mentions "The Gen 2 version offers a...". The other card is the older
+> generation connector and will **not** work with your Gen 2 runtime.
 >
-> ```sql
-> LS @OPENFLOW_SHARED.PG.UC2_FILES;   -- postgresql-42.7.4.jar
-> GET @OPENFLOW_SHARED.PG.UC2_FILES/postgresql-42.7.4.jar file:///tmp/;
-> ```
->
-> If you'd rather not use a local client, get it from
-> [Maven Central](https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar)
-> in your browser, then upload it in the wizard's Source step.
+> Easiest way to avoid the mistake: click the **`Gen 2`** filter chip first, so
+> only Gen 2 connectors are listed.
 
-<!-- SCREENSHOTS: add guided-setup screenshots here -->
+Click **`Install`** on the Gen 2 card. (The action is *Install*, not *Create*.)
+
+#### 4.2 - Install it into your runtime
+
+The **Install PostgreSQL** dialog opens:
+
+![Install PostgreSQL dialog](screenshots/02_install_connector.png)
+
+| Field | What to enter |
+|---|---|
+| **Select runtime** | your runtime, `SWTBER27_USER<N>_RUNTIME` |
+| **Connector name** | `UC2_PG_CDC` (must be a valid SQL identifier) |
+
+Then click **`Begin installation`**.
+
+> The dialog only lists runtimes that qualify: a **Gen 2** runtime, extensions
+> version `2026.8.25.11` or later, **maximum 1 node**. The runtime we created for
+> you meets all three - if your dropdown is empty, ask a host.
+>
+> The blue box also offers a **`Copy prompt`** button that hands Snowflake's own
+> `@(serverSkill:openflow)` skill a prerequisites prompt. You don't need it for
+> this lab (everything is pre-provisioned), but it's a handy trick to remember.
+
+Installation drops you into the configuration wizard, which has **seven steps**:
+Source, Replication table schema, Replication columns, Destination details,
+Tuning, Migration, Summary.
+
+> **After filling in each step, click `Verify configuration` before clicking
+> `Next`.** Every step has that button. It checks your input against the live
+> Postgres and your Snowflake privileges, so a typo surfaces immediately instead
+> of failing silently ten minutes later.
+
+#### 4.3 - Step "Source"
+
+Use the values from Step 3.
+
+![Source step](screenshots/04_configure_source.png)
+
+| Field | Value |
+|---|---|
+| Source Database Connection URL | the `JDBC_URL` from Step 3 |
+| Source Database Driver | **Browse** and upload the `postgresql-42.7.4.jar` you downloaded in 4.0 |
+| Source Database User | `swtber27_cdc` |
+| Source Database Password | pick the secret **`SWTBER27_PG_CDC_SECRET`** from the dropdown |
+| Source Database Publication Name | `swtber27_cdc_pub` |
+| Configure Logical Keys | `Default Primary Key Support` |
+
+Note the password is a **dropdown of Snowflake secrets**, not a text box - you
+never see or paste the actual password.
+
+Click **`Verify configuration`**, then **`Next`**.
+
+#### 4.4 - Step "Replication table schema"
+
+Leave **`Manual selection`** selected (the default).
+
+![Select only the public schema](screenshots/05_configure_source_tables.png)
+
+> **Tick `public` only.** Leave `cron` and `extension_base` unticked - those are
+> Postgres extension internals, they're not in our publication, and selecting
+> them will just produce noise.
+
+Ticking `public` selects both of its tables (`sensors` and `sensor_readings`),
+shown as `(2/2)`.
+
+Click **`Verify configuration`**, then **`Next`**.
+
+#### 4.5 - Step "Replication columns"
+
+Nothing to change - we replicate all columns. Click **`Verify configuration`**,
+then **`Next`**.
+
+#### 4.6 - Step "Destination details"
+
+![Destination details step](screenshots/06_configure_destination.png)
+
+| Field | Value |
+|---|---|
+| Snowflake Destination Database | `SWTBER27_USER<N>` |
+| Snowflake Warehouse | `COMPUTE_WH` |
+| Destination Schema Strategy | `{schema}` |
+| Object Identifier Resolution | `Case Insensitive` |
+| Legacy Format Support | `Standard` |
+| Oversized Value Strategy | `Set Null` |
+| Error Handling Strategy | `Log Errors and Continue` |
+
+Those are the defaults apart from the first two. You do **not** need to
+pre-create the destination schema - the connector creates it for you, and with
+`{schema}` the Postgres `public` schema lands in Snowflake as `PUBLIC`.
+
+Click **`Verify configuration`**, then **`Next`**.
+
+#### 4.7 - Step "Tuning"
+
+![Tuning step](screenshots/07_tuning.png)
+
+| Field | Value |
+|---|---|
+| Merge Task Schedule CRON | `0 * * * * ?` |
+| Concurrent Snapshot Queries | `2` |
+
+Both are defaults - keep them. CDC changes always stream into a **journal
+table** immediately; this CRON controls how often the journal is merged into the
+final destination table, which is what makes changes queryable. `0 * * * * ?`
+means once a minute, so expect up to ~60s of lag in Step 5.
+
+Click **`Verify configuration`**, then **`Next`**.
+
+#### 4.8 - Step "Migration"
+
+Nothing to change. Click **`Next`**.
+
+#### 4.9 - Step "Summary" - review and apply
+
+The Summary step shows **Review configuration** with everything you entered.
+
+![Review configuration](screenshots/08_review.png)
+
+Click the blue **`Verify configuration`** button one last time. You'll get a
+modal that checks every step in turn:
+
+![Verifying configuration](screenshots/09_verify.png)
+
+Wait for all steps to show a green tick. Then click **`Apply`**.
+
+#### 4.10 - Start the connector
+
+**Applying the configuration does not start the connector.** Go to the
+**Installed connectors** tab - your connector is listed with state **`Stopped`**.
+
+![Start the connector](screenshots/10_start_connector.png)
+
+Open the row's **`⋮`** menu and choose **`Start`**.
+
+> That menu is also where you'll find **View canvas** (the NiFi flow) and
+> **Monitor in Snowsight** - both useful while you wait for data in Step 5.
+
+Give it a minute, refresh, and confirm the state becomes running. Now jump to
+Step 5 to watch the data arrive.
+
+---
+
+### Seeing what the wizard produced, as SQL
+
+A Gen 2 connector is a real Snowflake object, and everything you just clicked
+through was written to a `config.json` on the connector's own internal versioned
+stage. It's worth looking at - it's exactly what Option B writes by hand, and
+it's how you'd capture a hand-tuned connector for reuse or version control.
+
+```sql
+USE ROLE SWTBER27_USER<N>_RL;
+USE WAREHOUSE COMPUTE_WH;
+
+-- The connector object itself
+SHOW OPENFLOW CONNECTORS IN SCHEMA SWTBER27_USER<N>.PUBLIC;
+
+-- What's on its versioned stage
+LS 'snow://openflow_connector/SWTBER27_USER<N>.PUBLIC.UC2_PG_CDC/versions/live/';
+```
+
+You'll see your `config.json` and the driver jar you uploaded. To read the JSON,
+copy it into your own stage and select it as text:
+
+```sql
+CREATE STAGE IF NOT EXISTS SWTBER27_USER<N>.PUBLIC.MY_UC2_FILES;
+
+CREATE OR REPLACE FILE FORMAT SWTBER27_USER<N>.PUBLIC.RAW_TEXT
+  TYPE = CSV FIELD_DELIMITER = NONE FIELD_OPTIONALLY_ENCLOSED_BY = NONE
+  ESCAPE_UNENCLOSED_FIELD = NONE COMPRESSION = NONE;
+
+COPY FILES INTO @SWTBER27_USER<N>.PUBLIC.MY_UC2_FILES/
+  FROM 'snow://openflow_connector/SWTBER27_USER<N>.PUBLIC.UC2_PG_CDC/versions/live/'
+  FILES = ('config.json');
+
+ALTER STAGE SWTBER27_USER<N>.PUBLIC.MY_UC2_FILES REFRESH;
+
+-- Reassemble the file into a single JSON value
+SELECT TRY_PARSE_JSON(LISTAGG($1, '\n')) AS config
+FROM @SWTBER27_USER<N>.PUBLIC.MY_UC2_FILES/config.json
+  (FILE_FORMAT => 'SWTBER27_USER<N>.PUBLIC.RAW_TEXT');
+```
+
+Compare that output with the config in Option B below - same structure, same
+property names. The guided setup is a front end over this file.
 
 ### Option B - SQL (no local tools needed)
 
@@ -308,6 +479,22 @@ SHOW OPENFLOW CONNECTORS IN DATABASE SWTBER27_USER<N>;   -- expect status RUNNIN
 SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.SENSORS;           -- expect 10
 SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.SENSOR_READINGS;   -- ~20,000 and climbing
 ```
+
+In the Snowsight object explorer, your destination database now has a `PUBLIC`
+schema with **three** tables:
+
+![Replicated tables in the destination database](screenshots/11_verify_data_in_destination.png)
+
+| Table | What it is |
+|---|---|
+| `SENSORS` | replica of `public.sensors` |
+| `SENSOR_READINGS` | replica of `public.sensor_readings` - query this one |
+| `SENSOR_READINGS_JOURNAL_...` | the CDC journal (raw change events) |
+
+The journal table is connector plumbing: changes land there continuously, then
+the merge task you configured in the Tuning step (`0 * * * * ?`, once a minute)
+applies them to `SENSOR_READINGS`. That's why new rows can take up to a minute to
+show up below - it isn't a broken pipeline, it's the merge schedule.
 
 Now prove the stream is live - run this twice, about a minute apart. The count
 should grow by roughly 60 (5 rows every 5 seconds):

@@ -92,6 +92,7 @@ CREATE USER IF NOT EXISTS SWTBER27_{{ user.id | upper }}
   PASSWORD = '{{ user.password }}'
   MUST_CHANGE_PASSWORD = FALSE
   DEFAULT_ROLE = SWTBER27_{{ user.id | upper }}_RL
+  TYPE = 'LEGACY_SERVICE'
   DEFAULT_WAREHOUSE = {{ warehouse }}
   DEFAULT_SECONDARY_ROLES = ('ALL')
   COMMENT = 'Openflow HoL attendee. [openflow]';
