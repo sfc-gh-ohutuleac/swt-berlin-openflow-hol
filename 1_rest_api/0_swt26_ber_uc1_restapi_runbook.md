@@ -6,7 +6,7 @@ don't need to create any integration, network rule, or EAI - just follow the
 steps below.
 
 You should have received:
-- **Username**: `SWTBER27_USER<N>` (e.g. `SWTBER27_USER07`)
+- **Username**: `SWTBER26_USER<N>` (e.g. `SWTBER26_USER07`)
 - **Password** (keep it - you won't be asked to change it)
 
 Everywhere below, replace `<N>` with your own attendee number.
@@ -17,7 +17,7 @@ Everywhere below, replace `<N>` with your own attendee number.
 
 1. Go to Snowsight and log in with your assigned username/password.
 2. Check the role selector (top left) - it should already default to
-   `SWTBER27_USER<N>_RL`. This is your role for everything in this lab: it
+   `SWTBER26_USER<N>_RL`. This is your role for everything in this lab: it
    owns your database and doubles as your Openflow runtime's "execute-as"
    role.
 
@@ -32,12 +32,12 @@ Everywhere below, replace `<N>` with your own attendee number.
 1. In the left navigation, go to **Ingestion » Openflow**.
 2. You'll see the lab **deployment** - you have `USAGE` on it, so it's visible to you.
 3. Click **Create a runtime**. Fill in:
-   - **Runtime Name**: e.g. `SWTBER27_USER<N>_RUNTIME`
+   - **Runtime Name**: e.g. `SWTBER26_USER<N>_RUNTIME`
    - **Deployment**: select the lab deployment
    - **Node Type**: `SMALL`
    - **Min/Max Nodes**: `1` / `1`
-   - **Execute-as role**: `SWTBER27_USER<N>_RL` (your own role)
-   - **External Access Integrations**: `SWTBER27_LAB_EAI` (select it here -
+   - **Execute-as role**: `SWTBER26_USER<N>_RL` (your own role)
+   - **External Access Integrations**: `SWTBER26_LAB_EAI` (select it here -
      this is what lets your flow call the internet)
 4. Click **Create**. This takes a couple of minutes.
 5. Once it shows **Active**, click on it to open the NiFi canvas.
@@ -47,20 +47,20 @@ Everywhere below, replace `<N>` with your own attendee number.
 Runtimes are first-class Snowflake objects in Gen2 and can be created, altered, and dropped with SQL — useful for automation, CI/CD, or scripted lab provisioning.
 
 ```sql
-USE ROLE SWTBER27_USER<N>_RL;
+USE ROLE SWTBER26_USER<N>_RL;
 
-CREATE OPENFLOW RUNTIME SWTBER27_USER<N>.PUBLIC.SWTBER27_USER<N>_RUNTIME
+CREATE OPENFLOW RUNTIME SWTBER26_USER<N>.PUBLIC.SWTBER26_USER<N>_RUNTIME
   IN DEPLOYMENT <shared_deployment_name>
   NODE_TYPE = SMALL
   MIN_NODES = 1
   MAX_NODES = 1
-  EXECUTE_AS_ROLE = SWTBER27_USER<N>_RL
-  EXTERNAL_ACCESS_INTEGRATIONS = (SWTBER27_LAB_EAI)
+  EXECUTE_AS_ROLE = SWTBER26_USER<N>_RL
+  EXTERNAL_ACCESS_INTEGRATIONS = (SWTBER26_LAB_EAI)
   DISPLAY_NAME = 'User <N> Runtime';
 
 -- Wait for the runtime to become ACTIVE (provisioning takes ~3-5 minutes)
 SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(
-  'SWTBER27_USER<N>.PUBLIC.SWTBER27_USER<N>_RUNTIME', 'ACTIVE', 600
+  'SWTBER26_USER<N>.PUBLIC.SWTBER26_USER<N>_RUNTIME', 'ACTIVE', 600
 );
 ```
 
@@ -70,7 +70,7 @@ Reference: [Quickstart: Gen2 Openflow — Create a runtime](https://docs.snowfla
 
 ### Step 2.5 - Open your runtime
 
-Your runtime (`SWTBER27_USER<N>_RUNTIME`) has been pre-created and is already **Active**.
+Your runtime (`SWTBER26_USER<N>_RUNTIME`) has been pre-created and is already **Active**.
 
 1. In the left navigation, go to **Ingestion » Openflow**.
 2. Click on your runtime to open the NiFi canvas.
@@ -83,7 +83,7 @@ Openflow runtimes run inside Snowflake and have **no outbound network access
 by default**. Two objects change that, and both are already set up for you:
 
 - A **network rule** allowing egress to `dummyjson.com:443`
-- An **External Access Integration** (`SWTBER27_LAB_EAI`) that wraps that rule
+- An **External Access Integration** (`SWTBER26_LAB_EAI`) that wraps that rule
   and is **attached to your runtime**
 
 Without the EAI attached, the `InvokeHTTP` processors would fail with
@@ -100,7 +100,7 @@ Snowflake database.
 
 ### Step 3.1 - Create the destination table
 
-Your database (`SWTBER27_USER<N>`) is empty - no table has been pre-created
+Your database (`SWTBER26_USER<N>`) is empty - no table has been pre-created
 for you. Before building the flow, create a destination table in Snowsight
 (schema `PUBLIC`) with columns matching the fields you want to extract from
 the two APIs. This is intentionally part of the exercise.
@@ -110,12 +110,7 @@ Explore the API responses to decide the shape:
 - Carts: `https://dummyjson.com/carts/user/1`
 
 If you want a ready-made DDL, `swt26_ber_table_setup.sql` on the shared lab stage
-contains a reference schema (including an optional Iceberg-table variant):
-
-```sql
-LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
-GET @OPENFLOW_SHARED.INFRA.UC1_FILES/swt26_ber_table_setup.sql file:///tmp/;
-```
+contains a reference schema (including an optional Iceberg-table variant).
 
 ---
 
@@ -125,16 +120,8 @@ Choose one of the two paths below.
 
 **Fast path** — import the pre-built flow:
 
-1. Download `swt26_ber_flow.json` from the shared lab stage - everything for this
-   lab lives in `OPENFLOW_SHARED` and your role can already read it:
-
-   ```sql
-   LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
-   GET @OPENFLOW_SHARED.INFRA.UC1_FILES/swt26_ber_flow.json file:///tmp/;
-   ```
-
-   In Snowsight you can also download it from **Data » Databases »
-   OPENFLOW_SHARED » INFRA » Stages » UC1_FILES**.
+1. Download `swt26_ber_flow.json` from the shared lab stage - in Snowsight go to
+   **Data » Databases » OPENFLOW_SHARED » INFRA » Stages » UC1_FILES**.
 2. On your NiFi canvas, drag a **Process Group** from the top toolbar onto the canvas.
 3. In the "Create process group" dialog, click the small **upload icon** on the right side of the Name field (tooltip: "Browse") and select `swt26_ber_flow.json`.
 4. Click **Add**. The flow appears as a Process Group — double-click to open it.
@@ -159,15 +146,25 @@ Choose one of the two paths below.
 
    | Processor | Database | Pipe |
    |---|---|---|
-   | `Write to USER_SPENDING` | `SWTBER27_USER<N>` | `<YOUR_TABLE_NAME>-STREAMING` |
-   | `Write to USER_SPENDING_ICEBERG` | `SWTBER27_USER<N>` | `<YOUR_ICEBERG_TABLE>-STREAMING` |
+   | `Write to USER_SPENDING` | `SWTBER26_USER<N>` | `<YOUR_TABLE_NAME>-STREAMING` |
+   | `Write to USER_SPENDING_ICEBERG` | `SWTBER26_USER<N>` | `<YOUR_ICEBERG_TABLE>-STREAMING` |
 
    The pipe name must follow the `<YOUR_TABLE_NAME>-STREAMING` convention - that
    suffix is how Snowflake resolves which table to write to (see below).
 
    If you are skipping the Iceberg bonus, just delete the second processor.
 
-**Manual path** *(recommended at least once)* — follow `swt26_ber_hints.txt` to build these processors yourself:
+**Manual path** *(recommended at least once)* — follow `swt26_ber_hints.txt` to build these processors yourself.
+
+First, **create a Process Group to build in**: drag a **Process Group** from the
+top toolbar onto the canvas, give it a name (e.g. `User Spending Enrichment`),
+and click **Add** - leave the upload icon alone this time. Double-click into the
+new group; everything below gets built inside it.
+
+A Process Group keeps your processors and controller services scoped together,
+and lets you start, stop, and import the whole flow as one unit.
+
+Then build this chain:
 
 ```
 GenerateFlowFile (Trigger)
@@ -194,7 +191,7 @@ Configure `PublishSnowpipeStreaming`:
 |---|---|
 | Authentication Strategy | `SNOWFLAKE_MANAGED` |
 | Destination Type | `Pipe` |
-| Database | `SWTBER27_USER<N>` |
+| Database | `SWTBER26_USER<N>` |
 | Schema | `PUBLIC` |
 | Pipe | `<YOUR_TABLE_NAME>-STREAMING` |
 | Web Client Service Provider | the `StandardWebClientServiceProvider` you created |
@@ -229,8 +226,8 @@ The default pipe is fully Snowflake-managed (no `CREATE`, `ALTER`, or `DROP`),
 but you can inspect it:
 
 ```sql
-SHOW PIPES IN SCHEMA SWTBER27_USER<N>.PUBLIC;
-SHOW CHANNELS IN PIPE SWTBER27_USER<N>.PUBLIC."USER_SPENDING-STREAMING";
+SHOW PIPES IN SCHEMA SWTBER26_USER<N>.PUBLIC;
+SHOW CHANNELS IN PIPE SWTBER26_USER<N>.PUBLIC."USER_SPENDING-STREAMING";
 ```
 
 If you needed in-flight transformations (reordering columns, casting, applying
@@ -289,7 +286,7 @@ To actually re-run with fresh data, pick one:
 In all cases, truncate the table first so you do not end up with duplicates:
 
 ```sql
-TRUNCATE TABLE SWTBER27_USER<N>.PUBLIC.<YOUR_TABLE_NAME>;
+TRUNCATE TABLE SWTBER26_USER<N>.PUBLIC.<YOUR_TABLE_NAME>;
 ```
 
 Also empty any queued FlowFiles left on the canvas before re-triggering -
@@ -301,9 +298,9 @@ duplicates: right-click each connection -> **Empty queue**.
 Back in a Snowsight SQL worksheet, run (as your own role/user):
 
 ```sql
-SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.<YOUR_TABLE_NAME>;  -- expect 30
+SELECT COUNT(*) FROM SWTBER26_USER<N>.PUBLIC.<YOUR_TABLE_NAME>;  -- expect 30
 
-SELECT * FROM SWTBER27_USER<N>.PUBLIC.<YOUR_TABLE_NAME>
+SELECT * FROM SWTBER26_USER<N>.PUBLIC.<YOUR_TABLE_NAME>
 ORDER BY CART_TOTAL DESC
 LIMIT 5;
 ```
@@ -319,11 +316,8 @@ LIMIT 50;
 ```
 
 All reference files for this lab live on a shared stage in `OPENFLOW_SHARED`
-that your role can read - no GitHub access needed:
-
-```sql
-LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
-```
+that your role can read - no GitHub access needed. In Snowsight: **Data »
+Databases » OPENFLOW_SHARED » INFRA » Stages » UC1_FILES**.
 
 | File | What it is |
 |---|---|
@@ -337,13 +331,13 @@ LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
 
 - **`UnknownHostException` bulletins on the canvas** - the EAI wasn't
   selected when creating the runtime. Go to your runtime's "..." menu ->
-  "External access integrations" -> select `SWTBER27_LAB_EAI` -> Save (no
+  "External access integrations" -> select `SWTBER26_LAB_EAI` -> Save (no
   restart needed).
 - **`ERR_TABLE_DOES_NOT_EXIST_NOT_AUTHORIZED` on the write processor** - the
   error conflates two causes. Either the destination table does not exist yet
   (create it - Step 3.1; the *pipe* is auto-created but the *table* is not), or
   the `Database` property is still empty / pointing at the wrong database.
-  Check with `SHOW TABLES IN SCHEMA SWTBER27_USER<N>.PUBLIC;`.
+  Check with `SHOW TABLES IN SCHEMA SWTBER26_USER<N>.PUBLIC;`.
 - **`STALE_CONTINUATION_TOKEN_SEQUENCER` on the write processor** - the
   streaming channel is out of sync with Snowflake, usually after a processor
   or runtime restart. Fix: change the `Channel Group` property to a new name

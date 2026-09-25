@@ -60,7 +60,7 @@ FLOW OVERVIEW (9 processors, top to bottom)
   +------------------------------+
               |
   +------------------------------+
-  | 9. PublishSnowpipeStreaming  |  Write to SWTBER27_USER<N>.PUBLIC.USER_SPENDING
+  | 9. PublishSnowpipeStreaming  |  Write to SWTBER26_USER<N>.PUBLIC.USER_SPENDING
   +------------------------------+
 
 
@@ -68,12 +68,29 @@ FLOW OVERVIEW (9 processors, top to bottom)
 STEP-BY-STEP HINTS
 ================================================================================
 
+STEP 0: Create a Process Group to build in
+  Do this FIRST, before adding any processor.
+
+  1. Drag a "Process Group" from the top toolbar onto the canvas.
+  2. Give it a name, e.g. "User Spending Enrichment".
+     (Ignore the upload icon in the Name field - that is for importing an
+     existing flow.json.)
+  3. Click Add, then double-click into the new group.
+  4. Build everything below INSIDE this group.
+
+  WHY?
+  A Process Group scopes your processors and controller services together, and
+  lets you start, stop, and export the whole flow as one unit. Controller
+  services created inside the group are only visible to processors in it -
+  which is what you want.
+
 STEP 1: GenerateFlowFile
   Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/generateflowfile
 
   Name:        "Trigger (run once)"
   Schedule:    1 hour (for lab, right-click > "Run Once" to trigger manually)
   Custom Text: (leave empty / remove property)
+  Connect:     "success" relationship -> next processor
 
   WHY THIS PROCESSOR?
   NiFi is event-driven: nothing happens until a FlowFile enters the pipeline.
@@ -155,7 +172,7 @@ STEP 6: EvaluateJsonPath - Extract Cart Totals
   Name:        "Extract Cart Totals"
   Destination: flowfile-attribute
   Return Type: auto-detect
-  Dynamic properties:
+  Dynamic properties (add these manually with the "+" button):
     cart_total      = $.carts[0].total
     cart_discounted = $.carts[0].discountedTotal
     total_products  = $.carts[0].totalProducts
@@ -172,7 +189,7 @@ STEP 7: UpdateAttribute
   Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/updateattribute
 
   Name: "Set Timestamp"
-  Dynamic properties:
+  Dynamic properties (add these manually with the "+" button):
     ingested_at = ${now():format('yyyy-MM-dd HH:mm:ss')}
   Connect: "success" relationship -> next processor
 
@@ -188,7 +205,6 @@ STEP 8: AttributesToJSON
   Attributes List: user_id,first_name,last_name,email,city,country,cart_total,cart_discounted,total_products,total_quantity,ingested_at
   Destination:     flowfile-content
   Include Core Attributes: false
-  Null Value:      false
   Auto-terminate:  failure
   Connect:         "success" relationship -> next processor
 
@@ -207,8 +223,8 @@ STEP 9: PublishSnowpipeStreaming (write to regular table)
   Properties:
     Authentication Strategy:      SNOWFLAKE_MANAGED
     Destination Type:             Pipe
-    Role:                         SWTBER27_USER<N>_RL
-    Database:                     SWTBER27_USER<N>
+    Role:                         SWTBER26_USER<N>_RL
+    Database:                     SWTBER26_USER<N>
     Schema:                       PUBLIC
     Pipe:                         USER_SPENDING-STREAMING
     Web Client Service Provider:  <select the one you created>
@@ -336,14 +352,14 @@ VERIFICATION
 
 After running the flow once (right-click Trigger > Run Once, wait ~20 seconds):
 
-  SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.USER_SPENDING;
+  SELECT COUNT(*) FROM SWTBER26_USER<N>.PUBLIC.USER_SPENDING;
   -- Expected: 30 rows
 
-  SELECT COUNT(*) FROM SWTBER27_USER<N>.PUBLIC.USER_SPENDING_ICEBERG;
+  SELECT COUNT(*) FROM SWTBER26_USER<N>.PUBLIC.USER_SPENDING_ICEBERG;
   -- Expected: 30 rows (may take up to 30s for the Iceberg commit)
 
   SELECT USER_ID, FIRST_NAME, LAST_NAME, CITY, CART_TOTAL, INGESTED_AT
-  FROM SWTBER27_USER<N>.PUBLIC.USER_SPENDING
+  FROM SWTBER26_USER<N>.PUBLIC.USER_SPENDING
   ORDER BY CART_TOTAL DESC
   LIMIT 5;
 
@@ -377,8 +393,8 @@ TO ACTUALLY RE-RUN WITH FRESH DATA, pick one:
 
 In ALL cases, truncate the table first to avoid duplicates:
 
-  TRUNCATE TABLE SWTBER27_USER<N>.PUBLIC.USER_SPENDING;
-  TRUNCATE TABLE SWTBER27_USER<N>.PUBLIC.USER_SPENDING_ICEBERG;
+  TRUNCATE TABLE SWTBER26_USER<N>.PUBLIC.USER_SPENDING;
+  TRUNCATE TABLE SWTBER26_USER<N>.PUBLIC.USER_SPENDING_ICEBERG;
 
 Also clear any queued FlowFiles on the canvas before re-triggering, otherwise
 leftover FlowFiles from a previous run get processed too and you see
@@ -404,8 +420,8 @@ STEP 10: Duplicate PublishSnowpipeStreaming for Iceberg
   Everything else is IDENTICAL:
     Authentication Strategy:      SNOWFLAKE_MANAGED
     Destination Type:             Pipe
-    Role:                         SWTBER27_USER<N>_RL
-    Database:                     SWTBER27_USER<N>
+    Role:                         SWTBER26_USER<N>_RL
+    Database:                     SWTBER26_USER<N>
     Schema:                       PUBLIC
     Web Client Service Provider:  <same>
     Transfer Strategy:            ROWS

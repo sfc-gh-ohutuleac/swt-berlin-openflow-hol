@@ -16,8 +16,8 @@
 -- Replace <N> with your own attendee number everywhere below.
 --------------------------------------------------------------------------------
 
-USE ROLE SWTBER27_USER<N>_RL;
-USE DATABASE SWTBER27_USER<N>;
+USE ROLE SWTBER26_USER<N>_RL;
+USE DATABASE SWTBER26_USER<N>;
 USE SCHEMA PUBLIC;
 
 -- ============================================================================
@@ -74,8 +74,8 @@ EXTERNAL_VOLUME = 'SNOWFLAKE_MANAGED';
 -- ============================================================================
 -- 3. VERIFICATION
 -- ============================================================================
-SHOW TABLES IN SCHEMA SWTBER27_USER<N>.PUBLIC;
-SHOW ICEBERG TABLES IN SCHEMA SWTBER27_USER<N>.PUBLIC;
+SHOW TABLES IN SCHEMA SWTBER26_USER<N>.PUBLIC;
+SHOW ICEBERG TABLES IN SCHEMA SWTBER26_USER<N>.PUBLIC;
 
 --------------------------------------------------------------------------------
 -- Done. Your tables are ready.
