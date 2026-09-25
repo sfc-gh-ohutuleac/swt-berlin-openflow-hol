@@ -1,6 +1,6 @@
 # swt-berlin-openflow-hol
 
-Snowflake World Tour Berlin - Openflow Hands On Lab
+Snowflake World Tour Berlin 2026 - Openflow Hands On Lab
 
 ## Overview
 
@@ -11,7 +11,7 @@ your role, your Openflow runtime, and the source systems.
 | Folder | Use case | Approach |
 |---|---|---|
 | [`1_rest_api/`](1_rest_api/) | **UC1 - REST API** | Build a flow by hand on the NiFi canvas: fetch and enrich JSON from a public API, write with Snowpipe Streaming |
-| [`2_cdc/`](2_cdc/) | **UC2 - Postgres CDC** | Configure the PostgreSQL connector to continuously replicate a live database, via the guided wizard or pure SQL |
+| [`2_postgres/`](2_postgres/) | **UC2 - Postgres CDC** | Configure the PostgreSQL connector to continuously replicate a live database, via the guided wizard or pure SQL |
 | [`3_kafka/`](3_kafka/) | **UC3 - Kafka** | Stream from a Kafka/Redpanda topic *(pending broker provisioning)* |
 
 Each folder has its own README and a step-by-step runbook - start there.
@@ -19,7 +19,7 @@ Each folder has its own README and a step-by-step runbook - start there.
 ## Use cases
 
 ### 1. REST API
-[`1_rest_api/0_swt26_ber_uc1_restapi_runbook.md`](1_rest_api/0_swt26_ber_uc1_restapi_runbook.md)
+[`1_rest_api/README.md`](1_rest_api/README.md)
 
 Build the flow yourself, processor by processor: `InvokeHTTP` against a public
 API, split and enrich the JSON with a second call, then land it via
@@ -27,7 +27,7 @@ API, split and enrich the JSON with a second call, then land it via
 A pre-built `flow.json` is available if you'd rather import than build.
 
 ### 2. Postgres CDC
-[`2_cdc/0_swt26_ber_uc2_postgres_cdc_runbook.md`](2_cdc/0_swt26_ber_uc2_postgres_cdc_runbook.md)
+[`2_postgres/README.md`](2_postgres/README.md)
 
 Use a packaged **connector** instead of building a flow. Replicate two tables
 from a shared PostgreSQL database - an initial snapshot followed by continuous
@@ -35,7 +35,7 @@ CDC. The source generates 5 new rows every 5 seconds, so the stream is live.
 Shows both the guided setup wizard and the fully declarative SQL path.
 
 ### 3. Kafka
-[`3_kafka/README.md`](3_kafka/README.md) - pending broker provisioning.
+[`3_kafka/README.md`](3_kafka/README.md) - Run this lab on your own kafka broker, after the summit session.
 
 ## For lab admins
 
@@ -44,7 +44,7 @@ Shows both the guided setup wizard and the fully declarative SQL path.
 | File | Purpose |
 |---|---|
 | `admin_setup.sql` | One-time shared layer: Gen2 deployment, EAI, event table, Postgres instance, shared attendee role |
-| `users.yml` | Attendee list (200 defined) with passwords - the print-and-hand-out artifact |
+| `users.yml.example` | Template attendee list - copy to `users.yml` and fill in real passwords before rendering |
 | `render_provisioning.py` | Renders the Jinja templates into runnable SQL |
 | `templates/` | `provision_users`, `provision_runtimes`, and their deprovision counterparts |
 | `rendered/` | Generated SQL - review before running |

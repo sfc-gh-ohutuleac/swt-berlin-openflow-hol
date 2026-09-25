@@ -1,10 +1,10 @@
 -- ============================================================================
 -- UC2 - Postgres CDC: source-side setup (run with psql, NOT in Snowsight)
 --
--- Run as the instance's `snowflake_admin` role against the SWTBER27_PG
+-- Run as the instance's `snowflake_admin` role against the SWTBER26_PG
 -- Snowflake Postgres instance:
 --
---   export PGHOST=<host from DESCRIBE POSTGRES INSTANCE SWTBER27_PG>
+--   export PGHOST=<host from DESCRIBE POSTGRES INSTANCE SWTBER26_PG>
 --   export PGPORT=5432
 --   export PGDATABASE=postgres
 --   export PGUSER=snowflake_admin
@@ -17,8 +17,8 @@
 --   1. sensors            - small dimension table
 --   2. sensor_readings    - fact table, BIGSERIAL primary key
 --   3. seed data          - ~20k historical readings
---   4. swtber27_cdc       - the replication user the connectors authenticate as
---   5. swtber27_cdc_pub   - the publication the connectors read
+--   4. swtber26_cdc       - the replication user the connectors authenticate as
+--   5. swtber26_cdc_pub   - the publication the connectors read
 --   6. generate_readings()+ pg_cron job - continuous 5 rows every 5 seconds
 --
 -- Idempotent: safe to re-run.
@@ -109,23 +109,23 @@ WHERE NOT EXISTS (SELECT 1 FROM public.sensor_readings);
 --    REPLICATION and can grant it onward - verified.
 --
 --    CHANGE THIS PASSWORD and store the same value in the Snowflake secret
---    OPENFLOW_SHARED.PG.SWTBER27_PG_CDC_SECRET.
+--    OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET.
 -- ---------------------------------------------------------------------------
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'swtber27_cdc') THEN
-        CREATE ROLE swtber27_cdc WITH LOGIN REPLICATION PASSWORD 'ChangeMe_SwtBer27!';
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'swtber26_cdc') THEN
+        CREATE ROLE swtber26_cdc WITH LOGIN REPLICATION PASSWORD 'ChangeMe_SwtBer26!';
     ELSE
-        ALTER ROLE swtber27_cdc WITH LOGIN REPLICATION PASSWORD 'ChangeMe_SwtBer27!';
+        ALTER ROLE swtber26_cdc WITH LOGIN REPLICATION PASSWORD 'ChangeMe_SwtBer26!';
     END IF;
 END
 $$;
 
 -- The connector needs to SELECT every replicated table for the initial
 -- snapshot, plus schema visibility.
-GRANT USAGE ON SCHEMA public TO swtber27_cdc;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO swtber27_cdc;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO swtber27_cdc;
+GRANT USAGE ON SCHEMA public TO swtber26_cdc;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO swtber26_cdc;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO swtber26_cdc;
 
 -- ---------------------------------------------------------------------------
 -- 5. Publication
@@ -142,13 +142,13 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO swtber27_cdc
 -- ---------------------------------------------------------------------------
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'swtber27_cdc_pub') THEN
-        CREATE PUBLICATION swtber27_cdc_pub WITH (publish_via_partition_root = true);
+    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'swtber26_cdc_pub') THEN
+        CREATE PUBLICATION swtber26_cdc_pub WITH (publish_via_partition_root = true);
     END IF;
 END
 $$;
 
-ALTER PUBLICATION swtber27_cdc_pub SET TABLE public.sensors, public.sensor_readings;
+ALTER PUBLICATION swtber26_cdc_pub SET TABLE public.sensors, public.sensor_readings;
 
 -- ---------------------------------------------------------------------------
 -- 6. Continuous data generator - 5 new rows every 5 seconds
@@ -205,13 +205,13 @@ $$;
 -- does not create duplicate jobs (which would double the insert rate).
 DO $$
 BEGIN
-    PERFORM cron.unschedule('swtber27_generate_readings')
-    WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'swtber27_generate_readings');
+    PERFORM cron.unschedule('swtber26_generate_readings')
+    WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'swtber26_generate_readings');
 END
 $$;
 
 SELECT cron.schedule(
-    'swtber27_generate_readings',
+    'swtber26_generate_readings',
     '* * * * *',
     $$CALL public.generate_readings()$$
 );
@@ -223,11 +223,11 @@ SELECT 'wal_level' AS setting, setting AS value FROM pg_settings WHERE name = 'w
 UNION ALL SELECT 'max_replication_slots', setting FROM pg_settings WHERE name = 'max_replication_slots'
 UNION ALL SELECT 'max_wal_senders',       setting FROM pg_settings WHERE name = 'max_wal_senders';
 
-SELECT rolname, rolreplication, rolcanlogin FROM pg_roles WHERE rolname = 'swtber27_cdc';
+SELECT rolname, rolreplication, rolcanlogin FROM pg_roles WHERE rolname = 'swtber26_cdc';
 
-SELECT pubname, schemaname, tablename FROM pg_publication_tables WHERE pubname = 'swtber27_cdc_pub';
+SELECT pubname, schemaname, tablename FROM pg_publication_tables WHERE pubname = 'swtber26_cdc_pub';
 
-SELECT jobid, jobname, schedule, active FROM cron.job WHERE jobname = 'swtber27_generate_readings';
+SELECT jobid, jobname, schedule, active FROM cron.job WHERE jobname = 'swtber26_generate_readings';
 
 SELECT count(*) AS seeded_readings FROM public.sensor_readings;
 
@@ -242,7 +242,7 @@ SELECT count(*) AS readings_now, max(reading_ts) AS newest FROM public.sensor_re
 --    max_replication_slots and filling storage. Always drop inactive
 --    connector slots after the lab.
 -- ---------------------------------------------------------------------------
--- SELECT cron.unschedule('swtber27_generate_readings');
+-- SELECT cron.unschedule('swtber26_generate_readings');
 --
 -- -- Inspect before dropping: only ever drop INACTIVE slots.
 -- SELECT slot_name, active FROM pg_replication_slots WHERE slot_name LIKE 'snowflake_connector_%';
@@ -250,8 +250,8 @@ SELECT count(*) AS readings_now, max(reading_ts) AS newest FROM public.sensor_re
 -- FROM pg_replication_slots
 -- WHERE slot_name LIKE 'snowflake_connector_%' AND NOT active;
 --
--- DROP PUBLICATION IF EXISTS swtber27_cdc_pub;
+-- DROP PUBLICATION IF EXISTS swtber26_cdc_pub;
 -- DROP PROCEDURE IF EXISTS public.generate_readings(INT, INT, NUMERIC);
 -- DROP TABLE IF EXISTS public.sensor_readings;
 -- DROP TABLE IF EXISTS public.sensors;
--- DROP ROLE IF EXISTS swtber27_cdc;
+-- DROP ROLE IF EXISTS swtber26_cdc;

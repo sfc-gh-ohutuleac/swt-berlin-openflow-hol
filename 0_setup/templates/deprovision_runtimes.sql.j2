@@ -17,7 +17,7 @@
     slot. Orphaned slots pin WAL forever and will eventually exhaust
     max_replication_slots and fill the instance's storage. After running this,
     clean up on the Postgres side - see section 8 of
-    2_cdc/swt26_ber_uc2_postgres_setup.sql.
+    2_postgres/swt26_ber_uc2_postgres_setup.sql.
 -#}
 --!jinja
 -- ============================================================================
@@ -39,14 +39,14 @@ USE ROLE ACCOUNTADMIN;
 -- ----------------------------------------------------------------------------
 -- {{ user.id | upper }}
 -- ----------------------------------------------------------------------------
-USE ROLE SWTBER27_{{ user.id | upper }}_RL;
+USE ROLE SWTBER26_{{ user.id | upper }}_RL;
 
-ALTER OPENFLOW RUNTIME IF EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME SUSPEND;
-SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(600, 'SUSPENDED', 'SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME');
+ALTER OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME SUSPEND;
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(600, 'SUSPENDED', 'SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME');
 
-ALTER OPENFLOW RUNTIME IF EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME TERMINATE CASCADE;
+ALTER OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME TERMINATE CASCADE;
 
-DROP OPENFLOW RUNTIME IF EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME;
+DROP OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME;
 
 USE ROLE ACCOUNTADMIN;
 

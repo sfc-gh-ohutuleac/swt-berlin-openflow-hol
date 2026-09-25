@@ -2,7 +2,7 @@
 
 ## Re-running provisioning safely
 All four templates are idempotent (`CREATE ... IF NOT EXISTS` throughout). To add attendees:
-1. Edit `users.yml` (keep `id` lowercase, `password` set). 200 entries are already defined.
+1. Copy `users.yml.example` to `users.yml` and edit (keep `id` lowercase, `password` set). `users.yml` is gitignored.
 2. Re-run: `python3 render_provisioning.py` - this renders all four files
    (`provision_users.sql`, `provision_runtimes.sql`, and both deprovision counterparts).
 3. Review `rendered/provision_users.sql`, then execute it.
@@ -12,7 +12,7 @@ Existing users/roles/DBs are left untouched - passwords do NOT change on re-run,
 nothing is deleted.
 
 ## Current live state (2026-09-23)
-- `users.yml` defines **200** attendees.
+- `users.yml` (copied from `users.yml.example`) defines **200** attendees.
 - **Only user01..user15 are provisioned** (databases, roles, users).
 - **Only USER01 and USER02 have runtimes.** `rendered/provision_runtimes.sql` contains all 200
   blocks, deliberately unexecuted - each block is self-contained, so run only the range you need.
@@ -76,7 +76,7 @@ FROM pg_replication_slots
 WHERE slot_name LIKE 'snowflake_connector_%' AND NOT active;
 ```
 
-The shared layer (`OPENFLOW_ADMIN`, `OPENFLOW_SHARED`, the deployment, `SWTBER27_LAB_EAI`, the
+The shared layer (`OPENFLOW_ADMIN`, `OPENFLOW_SHARED`, the deployment, `SWTBER26_LAB_EAI`, the
 Postgres instance, the account event table) is never touched by any template - it is managed only
 via `admin_setup.sql`.
 
@@ -86,10 +86,10 @@ need to trim the fact table:
 
 ```sql
 -- via psql as snowflake_admin
-SELECT cron.unschedule('swtber27_generate_readings');   -- pause the generator
+SELECT cron.unschedule('swtber26_generate_readings');   -- pause the generator
 TRUNCATE public.sensor_readings;
 -- re-seed and re-schedule by re-running section 3 and 6 of
--- ../2_cdc/swt26_ber_uc2_postgres_setup.sql
+-- ../2_postgres/swt26_ber_uc2_postgres_setup.sql
 ```
 
 Note that truncating the source does **not** remove already-replicated rows from attendee
@@ -99,10 +99,10 @@ session fresh attendee databases.
 ## Shared privileges live in ONE place
 All privileges common to every attendee (Gen2 deployment `USAGE`, EAI `USAGE`, warehouse access,
 `OPENFLOW_SHARED` DB/schema `USAGE`, `READ` on the Postgres credentials secret and the git repo)
-are granted once to `SWTBER27_ATTENDEE_RL` in `admin_setup.sql`. Per-user roles only ever get
-`GRANT ROLE SWTBER27_ATTENDEE_RL TO ROLE SWTBER27_<user>_RL` - never a direct grant.
+are granted once to `SWTBER26_ATTENDEE_RL` in `admin_setup.sql`. Per-user roles only ever get
+`GRANT ROLE SWTBER26_ATTENDEE_RL TO ROLE SWTBER26_<user>_RL` - never a direct grant.
 
-To add or remove a shared privilege later, edit the `SWTBER27_ATTENDEE_RL` block in
+To add or remove a shared privilege later, edit the `SWTBER26_ATTENDEE_RL` block in
 `admin_setup.sql` once; it propagates to every attendee immediately.
 
 The two exceptions, granted per-user because they are schema-scoped, are
@@ -140,18 +140,18 @@ The two exceptions, granted per-user because they are schema-scoped, are
 **Postgres CDC password** - must be changed in both places, or the connector breaks:
 ```sql
 -- 1. Postgres side, via psql as snowflake_admin
-ALTER ROLE swtber27_cdc WITH PASSWORD '<new_password>';
+ALTER ROLE swtber26_cdc WITH PASSWORD '<new_password>';
 
 -- 2. Snowflake side
 USE ROLE OPENFLOW_ADMIN;
-ALTER SECRET OPENFLOW_SHARED.PG.SWTBER27_PG_CDC_SECRET SET SECRET_STRING = '<new_password>';
+ALTER SECRET OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET SET SECRET_STRING = '<new_password>';
 ```
 Running connectors pick the secret up on restart.
 
 **Snowflake Postgres admin credentials** - shown only once at instance creation and
 unrecoverable. If lost:
 ```sql
-ALTER POSTGRES INSTANCE SWTBER27_PG RESET ACCESS FOR 'snowflake_admin';
+ALTER POSTGRES INSTANCE SWTBER26_PG RESET ACCESS FOR 'snowflake_admin';
 ```
 
 **Git repo credentials**:

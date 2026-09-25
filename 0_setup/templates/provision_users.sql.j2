@@ -7,7 +7,7 @@
 
   All shared/common privileges (deployment USAGE, self-service runtime
   creation, EAI USAGE, warehouse, shared infra access) live on the single
-  SWTBER27_ATTENDEE_RL role (created in admin_setup.sql), which every
+  SWTBER26_ATTENDEE_RL role (created in admin_setup.sql), which every
   per-user role inherits via GRANT ROLE. Per-user roles hold ONLY their own
   database ownership - nothing else is granted directly to them.
 
@@ -52,51 +52,51 @@ USE ROLE ACCOUNTADMIN;
 
 -- Isolated, empty database - attendees build/own their destination table(s)
 -- as part of the flow; nothing is pre-created here.
-CREATE DATABASE IF NOT EXISTS SWTBER27_{{ user.id | upper }}
+CREATE DATABASE IF NOT EXISTS SWTBER26_{{ user.id | upper }}
   COMMENT = 'Openflow HoL sandbox for {{ user.id }}. [openflow]';
 
-CREATE SCHEMA IF NOT EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC;
+CREATE SCHEMA IF NOT EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC;
 
 -- Role: doubles as login role AND Openflow runtime execute-as role.
 -- Holds ONLY database ownership directly - everything else comes from
 -- inheriting the shared attendee role below.
-CREATE ROLE IF NOT EXISTS SWTBER27_{{ user.id | upper }}_RL
+CREATE ROLE IF NOT EXISTS SWTBER26_{{ user.id | upper }}_RL
   COMMENT = 'Openflow HoL login/execute-as role for {{ user.id }}. [openflow]';
 
-GRANT OWNERSHIP ON DATABASE SWTBER27_{{ user.id | upper }} TO ROLE SWTBER27_{{ user.id | upper }}_RL COPY CURRENT GRANTS;
+GRANT OWNERSHIP ON DATABASE SWTBER26_{{ user.id | upper }} TO ROLE SWTBER26_{{ user.id | upper }}_RL COPY CURRENT GRANTS;
 
 -- Database ownership transfer does NOT cascade to already-created child
 -- schemas - transfer PUBLIC schema ownership explicitly too, or the
 -- attendee will find their own PUBLIC schema still owned by ACCOUNTADMIN.
-GRANT OWNERSHIP ON SCHEMA SWTBER27_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER27_{{ user.id | upper }}_RL COPY CURRENT GRANTS;
+GRANT OWNERSHIP ON SCHEMA SWTBER26_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER26_{{ user.id | upper }}_RL COPY CURRENT GRANTS;
 
 -- Inherit all shared privileges (Gen2 deployment USAGE, EAI, warehouse,
 -- shared infra access, Postgres credentials) from the common role - nothing
 -- granted directly to this per-user role beyond its own database.
-GRANT ROLE {{ attendee_role }} TO ROLE SWTBER27_{{ user.id | upper }}_RL;
+GRANT ROLE {{ attendee_role }} TO ROLE SWTBER26_{{ user.id | upper }}_RL;
 
 -- Gen2: runtimes and connectors are schema-level objects created inside the
 -- attendee's own database. Schema OWNERSHIP already implies CREATE OPENFLOW
 -- RUNTIME, but CREATE OPENFLOW CONNECTOR is NOT documented as implied by
 -- ownership - so grant both explicitly rather than relying on it.
-GRANT CREATE OPENFLOW RUNTIME   ON SCHEMA SWTBER27_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER27_{{ user.id | upper }}_RL;
-GRANT CREATE OPENFLOW CONNECTOR ON SCHEMA SWTBER27_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER27_{{ user.id | upper }}_RL;
+GRANT CREATE OPENFLOW RUNTIME   ON SCHEMA SWTBER26_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER26_{{ user.id | upper }}_RL;
+GRANT CREATE OPENFLOW CONNECTOR ON SCHEMA SWTBER26_{{ user.id | upper }}.PUBLIC TO ROLE SWTBER26_{{ user.id | upper }}_RL;
 
 -- Let the lab admin assume any attendee role for support and smoke testing,
 -- without needing the attendee's password.
-GRANT ROLE SWTBER27_{{ user.id | upper }}_RL TO ROLE SYSADMIN;
+GRANT ROLE SWTBER26_{{ user.id | upper }}_RL TO ROLE SYSADMIN;
 
 -- User. MUST_CHANGE_PASSWORD = FALSE on purpose: attendees keep the password
 -- printed in users.yml for the whole lab, so there is no first-login prompt.
-CREATE USER IF NOT EXISTS SWTBER27_{{ user.id | upper }}
+CREATE USER IF NOT EXISTS SWTBER26_{{ user.id | upper }}
   PASSWORD = '{{ user.password }}'
   MUST_CHANGE_PASSWORD = FALSE
-  DEFAULT_ROLE = SWTBER27_{{ user.id | upper }}_RL
+  DEFAULT_ROLE = SWTBER26_{{ user.id | upper }}_RL
   TYPE = 'LEGACY_SERVICE'
   DEFAULT_WAREHOUSE = {{ warehouse }}
   DEFAULT_SECONDARY_ROLES = ('ALL')
   COMMENT = 'Openflow HoL attendee. [openflow]';
 
-GRANT ROLE SWTBER27_{{ user.id | upper }}_RL TO USER SWTBER27_{{ user.id | upper }};
+GRANT ROLE SWTBER26_{{ user.id | upper }}_RL TO USER SWTBER26_{{ user.id | upper }};
 
 {% endfor %}

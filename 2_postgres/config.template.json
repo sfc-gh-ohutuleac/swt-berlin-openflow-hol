@@ -6,23 +6,23 @@
       "properties": {
         "Source Database Connection URL": {
           "valueType": "STRING_LITERAL",
-          "value": "jdbc:postgresql://ju5u5cax6raapbr77r7pqsjm64.sfpscogs-swtberlin2026-openflow.eu-central-1.aws.postgres.snowflake.app:5432/postgres?sslmode=require"
+          "value": "jdbc:postgresql://__PG_HOST__:5432/postgres?sslmode=require"
         },
         "Source Database Driver": {
           "valueType": "ASSET_REFERENCE",
-          "assetIds": ["postgresql-42.7.4.jar"]
+          "assetIds": ["__DRIVER_JAR__"]
         },
         "Source Database User": {
           "valueType": "STRING_LITERAL",
-          "value": "swtber27_cdc"
+          "value": "swtber26_cdc"
         },
         "Source Database Password": {
           "valueType": "SECRET_REFERENCE",
-          "fullyQualifiedSecretName": "OPENFLOW_SHARED.PG.SWTBER27_PG_CDC_SECRET"
+          "fullyQualifiedSecretName": "OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET"
         },
         "Source Database Publication Name": {
           "valueType": "STRING_LITERAL",
-          "value": "swtber27_cdc_pub"
+          "value": "swtber26_cdc_pub"
         },
         "Configure Logical Keys": {
           "valueType": "STRING_LITERAL",
@@ -95,7 +95,7 @@
       "properties": {
         "Snowflake Destination Database": {
           "valueType": "STRING_LITERAL",
-          "value": "SWTBER27_USER01"
+          "value": "__DEST_DB__"
         },
         "Snowflake Warehouse": {
           "valueType": "STRING_LITERAL",

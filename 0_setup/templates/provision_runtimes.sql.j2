@@ -46,16 +46,16 @@ USE ROLE ACCOUNTADMIN;
 
 {% for user in users %}
 -- ----------------------------------------------------------------------------
--- {{ user.id | upper }}  ->  SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME
+-- {{ user.id | upper }}  ->  SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME
 -- ----------------------------------------------------------------------------
-USE ROLE SWTBER27_{{ user.id | upper }}_RL;
+USE ROLE SWTBER26_{{ user.id | upper }}_RL;
 
-CREATE OPENFLOW RUNTIME IF NOT EXISTS SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME
+CREATE OPENFLOW RUNTIME IF NOT EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME
   IN DEPLOYMENT {{ deployment }}
   NODE_TYPE = SMALL
   MIN_NODES = 1
   MAX_NODES = 1
-  EXECUTE_AS_ROLE = SWTBER27_{{ user.id | upper }}_RL
+  EXECUTE_AS_ROLE = SWTBER26_{{ user.id | upper }}_RL
   EXTERNAL_ACCESS_INTEGRATIONS = ({{ eai }})
   DISPLAY_NAME = '{{ user.id | upper }} Runtime'
   COMMENT = 'Openflow HoL runtime for {{ user.id }}, owned by the attendee. [openflow]';
@@ -68,7 +68,7 @@ USE ROLE ACCOUNTADMIN;
 -- Split this across batches if you provisioned many at once.
 -- ----------------------------------------------------------------------------
 {% for user in users %}
-SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(900, 'ACTIVE', 'SWTBER27_{{ user.id | upper }}.PUBLIC.SWTBER27_{{ user.id | upper }}_RUNTIME') AS {{ user.id }}_status;
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(900, 'ACTIVE', 'SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME') AS {{ user.id }}_status;
 {% endfor %}
 
 -- ----------------------------------------------------------------------------

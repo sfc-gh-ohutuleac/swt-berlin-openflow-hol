@@ -8,6 +8,7 @@ steps below.
 You should have received:
 - **Username**: `SWTBER26_USER<N>` (e.g. `SWTBER26_USER07`)
 - **Password** (keep it - you won't be asked to change it)
+- **Account Link** Where we provisioned your env
 
 Everywhere below, replace `<N>` with your own attendee number.
 
@@ -18,12 +19,14 @@ Everywhere below, replace `<N>` with your own attendee number.
 1. Go to Snowsight and log in with your assigned username/password.
 2. Check the role selector (top left) - it should already default to
    `SWTBER26_USER<N>_RL`. This is your role for everything in this lab: it
-   owns your database and doubles as your Openflow runtime's "execute-as"
+   owns your database and used as your Openflow runtime's "execute-as"
    role.
 
 ## Step 2 - Create your own Openflow runtime *(reference only - do not perform)*
 
-> **Note: this step has already been done for you.** To save time during the lab (runtime creation can take several minutes, and spinning up many runtimes simultaneously on a shared deployment adds up), your runtime has been pre-provisioned. You can skip straight to opening it in Step 2.5 below.
+### Step 2.1 - Re-deploy your runtime (if necessary)
+
+> **Note: this step has already been done for you.** To save time during the lab (runtime creation can take several minutes, and spinning up many runtimes simultaneously on a shared deployment adds up), your runtime has been pre-provisioned. You can skip straight to opening it in Step 2.2 below.
 >
 > The instructions below are here for reference — so you know how to do it yourself after the lab.
 
@@ -68,11 +71,11 @@ Both options create the same runtime object. The SQL path is the recommended app
 
 Reference: [Quickstart: Gen2 Openflow — Create a runtime](https://docs.snowflake.com/en/user-guide/data-integration/openflow/gen2/quickstart#label-openflow-gen2-quickstart-runtime)
 
-### Step 2.5 - Open your runtime
+### Step 2.2 - Open your runtime
 
 Your runtime (`SWTBER26_USER<N>_RUNTIME`) has been pre-created and is already **Active**.
 
-1. In the left navigation, go to **Ingestion » Openflow**.
+1. In the left navigation, go to **Ingestion » Openflow** » **Launch Openflow** » **Runtimes**
 2. Click on your runtime to open the NiFi canvas.
 
 You own this runtime - nobody else can see or modify it.
@@ -109,7 +112,7 @@ Explore the API responses to decide the shape:
 - Users: `https://dummyjson.com/users`
 - Carts: `https://dummyjson.com/carts/user/1`
 
-If you want a ready-made DDL, `swt26_ber_table_setup.sql` on the shared lab stage
+If you want a ready-made DDL, see the file `swt26_ber_table_setup.sql`, or check the shared lab stage
 contains a reference schema (including an optional Iceberg-table variant).
 
 ---
@@ -120,7 +123,7 @@ Choose one of the two paths below.
 
 **Fast path** — import the pre-built flow:
 
-1. Download `swt26_ber_flow.json` from the shared lab stage - in Snowsight go to
+1. Download the `swt26_ber_flow.json` from the git repo or from the shared lab stage - in Snowsight go to
    **Data » Databases » OPENFLOW_SHARED » INFRA » Stages » UC1_FILES**.
 2. On your NiFi canvas, drag a **Process Group** from the top toolbar onto the canvas.
 3. In the "Create process group" dialog, click the small **upload icon** on the right side of the Name field (tooltip: "Browse") and select `swt26_ber_flow.json`.

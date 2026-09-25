@@ -1,0 +1,22 @@
+# Openflow Multi-Tenant Demo Lab - Pilot Attendee List
+#
+# Edit this file to add/remove attendees, then re-run render_provisioning.py.
+# Passwords are generated once here and kept stable across re-renders
+# (CREATE USER IF NOT EXISTS won't touch an already-created user's password).
+#
+# Shared context consumed alongside this list by the templates.
+# All Openflow/lab privileges (deployment usage, EAI, runtime creation,
+# warehouse, shared infra access) live on SWTBER27_ATTENDEE_RL, created once
+# in admin_setup.sql - per-user roles just inherit it. warehouse here is only
+# used to set each user's DEFAULT_WAREHOUSE.
+#
+# users.yml is gitignored — never commit real passwords.
+
+attendee_role: SWTBER27_ATTENDEE_RL
+warehouse: COMPUTE_WH
+
+users:
+  - id: USER01
+    password: CHANGE_ME_1
+  - id: USER02
+    password: CHANGE_ME_2
