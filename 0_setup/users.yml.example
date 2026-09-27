@@ -6,14 +6,16 @@
 #
 # Shared context consumed alongside this list by the templates.
 # All Openflow/lab privileges (deployment usage, EAI, runtime creation,
-# warehouse, shared infra access) live on SWTBER27_ATTENDEE_RL, created once
+# warehouse, shared infra access) live on SWTBER26_ATTENDEE_RL, created once
 # in admin_setup.sql - per-user roles just inherit it. warehouse here is only
 # used to set each user's DEFAULT_WAREHOUSE.
 #
 # users.yml is gitignored — never commit real passwords.
 
-attendee_role: SWTBER27_ATTENDEE_RL
+attendee_role: SWTBER26_ATTENDEE_RL
 warehouse: COMPUTE_WH
+deployment: SWTBER26_LAB_DEPLOYMENT
+eai: SWTBER26_LAB_EAI
 
 users:
   - id: USER01

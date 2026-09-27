@@ -4,6 +4,7 @@
 
 # Real user list with passwords (use users.yml.example as template)
 0_setup/users.yml
+0_setup/attendee_credentials.html
 
 # Secrets and keys
 *.pem

@@ -638,7 +638,7 @@ admin role - Openflow runtimes reject `ACCOUNTADMIN` as the active role.
 | File | What it is | Who runs it |
 |---|---|---|
 | `config.template.json` | Connector `config.json` with 3 placeholders (`__PG_HOST__`, `__DRIVER_JAR__`, `__DEST_DB__`) | Attendees (Option B) |
-| `swt26_ber_uc2_postgres_setup.sql` | Source-side setup: tables, seed data, CDC user, publication, generator | Lab admin, once, via `psql` |
+| `../0_setup/postgres_setup.sql` | Source-side setup: tables, seed data, CDC user, publication, generator | Lab admin, once, via `psql` |
 | `screenshots/` | Wizard screenshots referenced in the guide | - |
 
 ## Things worth knowing
@@ -653,7 +653,7 @@ admin role - Openflow runtimes reject `ACCOUNTADMIN` as the active role.
 - **Primary keys decide whether UPDATE/DELETE replicate.** Without a primary
   key, unique index, or `REPLICA IDENTITY FULL`, a table is insert-only.
 - **Dropping a connector does not drop its replication slot.** Orphaned slots
-  pin WAL forever. See section 8 of `swt26_ber_uc2_postgres_setup.sql` for
+  pin WAL forever. See section 8 of `../0_setup/postgres_setup.sql` for
   cleanup. A slot is only released after a full
   `STOP` -> `TERMINATE` -> `DROP`; `TERMINATE FORCE` alone is not enough.
 - **Real errors only appear in the event table**, not in
@@ -667,6 +667,6 @@ admin role - Openflow runtimes reject `ACCOUNTADMIN` as the active role.
 ## Admin setup order
 
 1. `../0_setup/admin_setup.sql` - shared layer, Postgres instance, EAI, secret
-2. `swt26_ber_uc2_postgres_setup.sql` - source tables, CDC user, publication, generator (via `psql`)
+2. `../0_setup/postgres_setup.sql` - source tables, CDC user, publication, generator (via `psql`)
 3. `../0_setup/rendered/provision_users.sql` - attendee databases, roles, users
 4. `../0_setup/rendered/provision_runtimes.sql` - one runtime per attendee

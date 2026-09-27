@@ -57,7 +57,7 @@ Cannot be automated. Do a full dry run as `SWTBER26_USER01` (or hand to a collea
       `SWTBER26_USER01_RL`.
 - [ ] Ingestion » Openflow shows the deployment and the pre-created runtime.
 - [ ] Create your own destination table in `SWTBER26_USER01.PUBLIC`.
-- [ ] Build or import the UC1 flow per `../1_rest_api/0_swt26_ber_uc1_restapi_runbook.md`.
+- [ ] Build or import the UC1 flow per `../1_rest_api/README.md`.
 - [ ] Run once; confirm no bulletins (especially no `UnknownHostException`).
 - [ ] `SELECT COUNT(*) FROM SWTBER26_USER01.PUBLIC.<your_table>;` -> 30.
 

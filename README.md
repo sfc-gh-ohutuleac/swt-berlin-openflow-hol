@@ -39,7 +39,7 @@ Shows both the guided setup wizard and the fully declarative SQL path.
 
 ## For lab admins
 
-[`0_setup/`](0_setup/) holds everything needed to stand the lab up:
+[`0_setup/`](0_setup/README.md) holds everything needed to stand up the lab:
 
 | File | Purpose |
 |---|---|
@@ -51,7 +51,7 @@ Shows both the guided setup wizard and the fully declarative SQL path.
 | `smoke_test_checklist.md` | Pre-event verification |
 | `reset_and_scale_procedure.md` | Between-session reset and scaling up |
 
-Run order: `admin_setup.sql` -> Use Case 2 Postgres source setup -> `provision_users.sql`
+Run order: `admin_setup.sql` -> `postgres_setup.sql` -> `provision_users.sql`
 -> `provision_runtimes.sql`.
 
 ## Links

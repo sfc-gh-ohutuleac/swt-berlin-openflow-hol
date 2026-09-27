@@ -12,9 +12,9 @@
 --   2. OPENFLOW_SHARED database (INFRA + GIT + PG schemas)
 --   3. Account-wide default event table (+ PUBLIC read access)
 --   4. Gen2 Openflow deployment
---   5. Shared network rules + EAI (UC1 REST API, UC2 Postgres CDC)
+--   5. Shared network rules + EAI (Use Case 1 REST API, Use Case 2 Postgres CDC)
 --   6. Shared git repository object for the HoL repo
---   7. UC2 Snowflake Postgres instance + ingress network policy
+--   7. Use Case 2 Snowflake Postgres instance + ingress network policy
 --   8. SWTBER26_ATTENDEE_RL: the ONE role holding every privilege common to
 --      all attendees. Per-user roles (created in provision_users.sql) hold
 --      ONLY their own database ownership and inherit everything else via
@@ -33,7 +33,6 @@ USE ROLE ACCOUNTADMIN;
 CREATE ROLE IF NOT EXISTS OPENFLOW_ADMIN
   COMMENT = 'Owns shared Openflow lab infrastructure (deployment, EAI, network rules, event table, git repo, Postgres). [openflow]';
 
-GRANT ROLE OPENFLOW_ADMIN TO USER TSTOLPE;
 GRANT ROLE OPENFLOW_ADMIN TO ROLE SYSADMIN;
 
 GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE OPENFLOW_ADMIN;
@@ -48,6 +47,7 @@ GRANT CREATE COMPUTE POOL        ON ACCOUNT TO ROLE OPENFLOW_ADMIN;
 -- Postgres CDC connector fails validation with the misleading message
 -- "'Snowflake Warehouse' validated against '<wh>' is invalid because Value is
 -- not one of the allowable values". That is a MISSING GRANT, not a bad value.
+CREATE WAREHOUSE IF NOT EXISTS COMPUTE_WH;
 GRANT USAGE, OPERATE ON WAREHOUSE COMPUTE_WH TO ROLE OPENFLOW_ADMIN;
 
 -- ---------------------------------------------------------------------------
@@ -59,13 +59,13 @@ CREATE DATABASE IF NOT EXISTS OPENFLOW_SHARED
   COMMENT = 'Shared Openflow lab infrastructure: event table, network rules, git repo, Postgres connection info. [openflow]';
 
 CREATE SCHEMA IF NOT EXISTS OPENFLOW_SHARED.INFRA
-  COMMENT = 'Event table + UC1 network rule for the Openflow lab. [openflow]';
+  COMMENT = 'Event table + Use Case 1 network rule for the Openflow lab. [openflow]';
 
 CREATE SCHEMA IF NOT EXISTS OPENFLOW_SHARED.GIT
   COMMENT = 'Git repository integration for the HoL repo. [openflow]';
 
 CREATE SCHEMA IF NOT EXISTS OPENFLOW_SHARED.PG
-  COMMENT = 'UC2 Snowflake Postgres source: network rules, credentials secret, connection info. [openflow]';
+  COMMENT = 'Use Case 2 Snowflake Postgres source: network rules, credentials secret, connection info. [openflow]';
 
 -- ---------------------------------------------------------------------------
 -- 3. Event table - set as the ACCOUNT-WIDE default so every Openflow runtime
@@ -74,18 +74,18 @@ CREATE SCHEMA IF NOT EXISTS OPENFLOW_SHARED.PG
 --
 --    This is also the ONLY place real connector errors are visible:
 --    SHOW OPENFLOW CONNECTORS reports just START_FAILED / UPDATE_FAILED.
---    See the UC2 runbook's troubleshooting section for the query to use
+--    See the Use Case 2 runbook's troubleshooting section for the query to use
 --    (note: use TRY_PARSE_JSON, not PARSE_JSON - some rows are not JSON).
 -- ---------------------------------------------------------------------------
 CREATE EVENT TABLE IF NOT EXISTS OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS
   COMMENT = 'Account-wide default event table; Openflow runtime + connector telemetry lands here automatically. [openflow]';
 
-USE ROLE ACCOUNTADMIN;
-ALTER ACCOUNT SET EVENT_TABLE = OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS;
-
 -- Grant once, to PUBLIC, so every current and future attendee role can query
 -- it automatically - no per-user grant needed in the provisioning template.
 GRANT SELECT ON TABLE OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS TO ROLE PUBLIC;
+
+USE ROLE ACCOUNTADMIN;
+ALTER ACCOUNT SET EVENT_TABLE = OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS;
 
 -- ---------------------------------------------------------------------------
 -- 4. Gen2 Openflow deployment
@@ -99,19 +99,19 @@ GRANT SELECT ON TABLE OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS TO ROLE PUBLIC;
 -- ---------------------------------------------------------------------------
 USE ROLE OPENFLOW_ADMIN;
 
-SET lab_deployment = 'MY_SNOWFLAKE_DEPLOYMENT';
+SET lab_deployment = 'SWTBER26_LAB_DEPLOYMENT';
 
--- CREATE OPENFLOW DEPLOYMENT IF NOT EXISTS SWTBER26_LAB_DEPLOYMENT
---   DEPLOYMENT_TYPE = SNOWFLAKE
---   DISPLAY_NAME = 'SWT Berlin HoL Deployment'
---   COMMENT = 'Shared Gen2 deployment for the SWT Berlin Openflow HoL. [openflow]';
---
--- SELECT SYSTEM$WAIT_FOR_OPENFLOW_DEPLOYMENT_STATUS(900, 'ACTIVE', 'SWTBER26_LAB_DEPLOYMENT');
+CREATE OPENFLOW DEPLOYMENT IF NOT EXISTS SWTBER26_LAB_DEPLOYMENT
+  DEPLOYMENT_TYPE = SNOWFLAKE
+  DISPLAY_NAME = 'SWT Berlin HoL Deployment'
+  COMMENT = 'Shared Gen2 deployment for the SWT Berlin Openflow HoL. [openflow]';
+
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_DEPLOYMENT_STATUS(900, 'ACTIVE', 'SWTBER26_LAB_DEPLOYMENT');
 
 SHOW OPENFLOW DEPLOYMENTS;
 
 -- ---------------------------------------------------------------------------
--- 5. UC2 - Snowflake Postgres instance (the CDC source)
+-- 5. Use Case 2 - Snowflake Postgres instance (the CDC source)
 --
 --    Done BEFORE the network rules, because the egress rule in section 6
 --    needs the instance hostname.
@@ -142,12 +142,12 @@ USE ROLE ACCOUNTADMIN;
 CREATE OR ALTER NETWORK RULE OPENFLOW_SHARED.PG.SWTBER26_PG_INGRESS_RULE
   TYPE = IPV4
   MODE = POSTGRES_INGRESS
-  VALUE_LIST = ('95.19.97.78/32', '153.45.52.0/24')
+  VALUE_LIST = ('153.45.52.0/24')
   COMMENT = 'Admin client IP + Openflow runtime egress range. [openflow]';
 
 CREATE OR ALTER NETWORK POLICY SWTBER26_PG_NETWORK_POLICY
   ALLOWED_NETWORK_RULE_LIST = ('OPENFLOW_SHARED.PG.SWTBER26_PG_INGRESS_RULE')
-  COMMENT = 'Ingress policy for the UC2 Snowflake Postgres instance. [openflow]';
+  COMMENT = 'Ingress policy for the Use Case 2 Snowflake Postgres instance. [openflow]';
 
 -- Without a network policy the instance accepts no incoming connections at all.
 CREATE POSTGRES INSTANCE IF NOT EXISTS SWTBER26_PG
@@ -157,7 +157,7 @@ CREATE POSTGRES INSTANCE IF NOT EXISTS SWTBER26_PG
   POSTGRES_VERSION = 18
   HIGH_AVAILABILITY = FALSE
   NETWORK_POLICY = 'SWTBER26_PG_NETWORK_POLICY'
-  COMMENT = 'UC2 Postgres CDC source for the SWT Berlin Openflow HoL. [openflow]';
+  COMMENT = 'Use Case 2 Postgres CDC source for the SWT Berlin Openflow HoL. [openflow]';
 
 -- Poll until state = READY (typically 2-5 minutes), and record the host value.
 DESCRIBE POSTGRES INSTANCE SWTBER26_PG;
@@ -187,51 +187,42 @@ ALTER POSTGRES INSTANCE SWTBER26_PG SET POSTGRES_SETTINGS = '{
 -- ---------------------------------------------------------------------------
 USE ROLE OPENFLOW_ADMIN;
 
--- UC1 - REST API demo
+-- Use Case 1 - REST API demo
 CREATE NETWORK RULE IF NOT EXISTS OPENFLOW_SHARED.INFRA.SWTBER26_LAB_NETWORK_RULE
   MODE = EGRESS
   TYPE = HOST_PORT
   VALUE_LIST = ('dummyjson.com:443')
-  COMMENT = 'Egress for UC1 REST API demo (dummyjson.com). [openflow]';
+  COMMENT = 'Egress for Use Case 1 REST API demo (dummyjson.com). [openflow]';
 
--- UC2 - Postgres CDC. Host:port only: no jdbc: scheme, no database path.
+-- Use Case 2 - Postgres CDC. Host:port only: no jdbc: scheme, no database path.
 -- Replace the hostname with the host value from section 5's DESCRIBE.
-CREATE NETWORK RULE IF NOT EXISTS OPENFLOW_SHARED.PG.SWTBER26_UC2_PG_EGRESS_RULE
+CREATE NETWORK RULE IF NOT EXISTS OPENFLOW_SHARED.PG.SWTBER26_PG_EGRESS_RULE
   MODE = EGRESS
   TYPE = HOST_PORT
-  VALUE_LIST = ('ju5u5cax6raapbr77r7pqsjm64.sfpscogs-swtberlin2026-openflow.eu-central-1.aws.postgres.snowflake.app:5432')
-  COMMENT = 'Egress from Openflow runtimes to the UC2 Snowflake Postgres instance. [openflow]';
+  VALUE_LIST = ('<postgres_hostname:5432')
+  COMMENT = 'Egress from Openflow runtimes to the Use Case 2 Snowflake Postgres instance. [openflow]';
 
 CREATE EXTERNAL ACCESS INTEGRATION IF NOT EXISTS SWTBER26_LAB_EAI
-  ALLOWED_NETWORK_RULES = (OPENFLOW_SHARED.INFRA.SWTBER26_LAB_NETWORK_RULE)
+  ALLOWED_NETWORK_RULES = (OPENFLOW_SHARED.INFRA.SWTBER26_LAB_NETWORK_RULE, OPENFLOW_SHARED.PG.SWTBER26_PG_EGRESS_RULE)
   ENABLED = TRUE
-  COMMENT = 'Shared EAI for Openflow lab attendees - UC1 REST API + UC2 Postgres CDC. [openflow]';
+  COMMENT = 'Shared EAI for Openflow lab attendees - Use Case 1 REST API + Use Case 2 Postgres CDC. [openflow]';
 
 -- ---------------------------------------------------------------------------
--- 6b. UC1 lab resources stage
+-- 6b. Use Case 1 lab resources stage
 --
---     Attendee-facing copies of the UC1 files so the lab does not depend on
+--     Attendee-facing copies of the Use Case 1 files so the lab does not depend on
 --     GitHub access.
 --
 --     Populate once from a machine with the repo checked out:
---       PUT 'file://.../1_rest_api/swt26_ber_flow.json'          @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/swt26_ber_hints.txt'          @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/swt26_ber_table_setup.sql'    @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/swt26_ber_summary.txt'        @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../1_rest_api/0_swt26_ber_uc1_restapi_runbook.md' @OPENFLOW_SHARED.INFRA.UC1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_flow.json'          @OPENFLOW_SHARED.INFRA.Use Case 1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_hints.txt'          @OPENFLOW_SHARED.INFRA.Use Case 1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_table_setup.sql'    @OPENFLOW_SHARED.INFRA.Use Case 1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/swt26_ber_summary.txt'        @OPENFLOW_SHARED.INFRA.Use Case 1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../1_rest_api/0_swt26_ber_Use Case 1_restapi_runbook.md' @OPENFLOW_SHARED.INFRA.Use Case 1_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
 -- ---------------------------------------------------------------------------
 CREATE STAGE IF NOT EXISTS OPENFLOW_SHARED.INFRA.UC1_FILES
   DIRECTORY = (ENABLE = TRUE)
-  COMMENT = 'UC1 REST API lab resources: flow.json, hints, reference setup SQL, runbook. Readable by SWTBER26_ATTENDEE_RL. [openflow]';
-
--- Additive ALTER, so re-running this script never detaches the EAI from
--- existing runtimes. Attaching/altering an EAI does not require a restart.
-USE ROLE ACCOUNTADMIN;
-ALTER EXTERNAL ACCESS INTEGRATION SWTBER26_LAB_EAI SET
-  ALLOWED_NETWORK_RULES = (
-    OPENFLOW_SHARED.INFRA.SWTBER26_LAB_NETWORK_RULE,
-    OPENFLOW_SHARED.PG.SWTBER26_UC2_PG_EGRESS_RULE
-  );
+  COMMENT = 'Use Case 1 REST API lab resources: flow.json, hints, reference setup SQL, runbook. Readable by SWTBER26_ATTENDEE_RL. [openflow]';
 
 -- --- UC3 placeholder ------------------------------------------------------
 -- NOT created yet - the Redpanda broker hostname is not known.
@@ -241,7 +232,7 @@ ALTER EXTERNAL ACCESS INTEGRATION SWTBER26_LAB_EAI SET
 -- then add it to the EAI with the same additive ALTER as above.
 
 -- ---------------------------------------------------------------------------
--- 7. UC2 - shared Postgres credentials for attendees
+-- 7. Use Case 2 - shared Postgres credentials for attendees
 --
 --    Two delivery mechanisms, because the two connector setup paths need
 --    different things:
@@ -259,24 +250,24 @@ USE ROLE OPENFLOW_ADMIN;
 CREATE SECRET IF NOT EXISTS OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET
   TYPE = GENERIC_STRING
   SECRET_STRING = '<postgres_replication_user_password>'
-  COMMENT = 'Postgres CDC password for UC2. READ granted to attendees; value never exposed. [openflow]';
+  COMMENT = 'Postgres CDC password for Use Case 2. READ granted to attendees; value never exposed. [openflow]';
 
 -- Non-sensitive connection details, so attendees can fill in the wizard or
 -- build a JDBC URL without being handed the password.
 CREATE OR REPLACE VIEW OPENFLOW_SHARED.PG.UC2_CONNECTION_INFO
-  COMMENT = 'UC2 Postgres connection details for attendees (no password). [openflow]'
+  COMMENT = 'Use Case 2 Postgres connection details for attendees (no password). [openflow]'
 AS
 SELECT
-  'ju5u5cax6raapbr77r7pqsjm64.sfpscogs-swtberlin2026-openflow.eu-central-1.aws.postgres.snowflake.app' AS PG_HOST,
+  '<postgres_hostname>' AS PG_HOST,
   5432                                                        AS PG_PORT,
   'postgres'                                                  AS PG_DATABASE,
   'swtber26_cdc'                                              AS PG_USER,
   'swtber26_cdc_pub'                                          AS PG_PUBLICATION,
   'OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET'                 AS PG_PASSWORD_SECRET,
-  'jdbc:postgresql://ju5u5cax6raapbr77r7pqsjm64.sfpscogs-swtberlin2026-openflow.eu-central-1.aws.postgres.snowflake.app:5432/postgres?sslmode=require' AS JDBC_URL;
+  'jdbc:postgresql://<postgres_hostname>:5432/postgres?sslmode=require' AS JDBC_URL;
 
 -- ---------------------------------------------------------------------------
--- 7b. UC2 lab resources stage - EVERYTHING attendees need, in OPENFLOW_SHARED
+-- 7b. Use Case 2 lab resources stage - EVERYTHING attendees need, in OPENFLOW_SHARED
 --
 --     Holds the PostgreSQL JDBC driver (which the connector does NOT ship
 --     with), the config.json template, and the lab docs. Attendees get READ,
@@ -284,16 +275,16 @@ SELECT
 --     versioned stage without any local tooling.
 --
 --     Populate it once from a machine with the repo checked out:
---       PUT 'file://.../2_postgres/config.template.json'                @OPENFLOW_SHARED.PG.UC2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../2_postgres/swt26_ber_uc2_postgres_setup.sql'    @OPENFLOW_SHARED.PG.UC2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../2_postgres/0_..._runbook.md'                    @OPENFLOW_SHARED.PG.UC2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
---       PUT 'file://.../postgresql-42.7.4.jar'                     @OPENFLOW_SHARED.PG.UC2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../2_postgres/config.template.json'                @OPENFLOW_SHARED.PG.Use Case 2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../2_postgres/swt26_ber_Use Case 2_postgres_setup.sql'    @OPENFLOW_SHARED.PG.Use Case 2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../2_postgres/0_..._runbook.md'                    @OPENFLOW_SHARED.PG.Use Case 2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+--       PUT 'file://.../postgresql-42.7.4.jar'                     @OPENFLOW_SHARED.PG.Use Case 2_FILES/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
 --     Driver download:
 --       https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
 -- ---------------------------------------------------------------------------
 CREATE STAGE IF NOT EXISTS OPENFLOW_SHARED.PG.UC2_FILES
   DIRECTORY = (ENABLE = TRUE)
-  COMMENT = 'All UC2 Postgres CDC lab resources: JDBC driver, config template, docs. Readable by SWTBER26_ATTENDEE_RL. [openflow]';
+  COMMENT = 'All Use Case 2 Postgres CDC lab resources: JDBC driver, config template, docs. Readable by SWTBER26_ATTENDEE_RL. [openflow]';
 
 -- ---------------------------------------------------------------------------
 -- 7c. Connector config generator
@@ -311,17 +302,19 @@ CREATE STAGE IF NOT EXISTS OPENFLOW_SHARED.PG.UC2_FILES
 --         FROM DEFINITION OPENFLOW_POSTGRES_CDC;
 --       GET 'snow://openflow_connector/<scratch>/versions/live/config.json' 'file:///tmp/';
 --     then diff against the JSON below.
+--
+--     Replace <postgres_hostname> with the real postgres host.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION OPENFLOW_SHARED.PG.UC2_CONFIG_JSON(DEST_DB STRING)
 RETURNS STRING
-COMMENT = 'Internal: raw config body. Use UC2_CONFIG_FOR() instead. [openflow]'
+COMMENT = 'Internal: raw config body. Use Use Case 2_CONFIG_FOR() instead. [openflow]'
 AS
 $$
 '{
   "configFormatVersion": 1,
   "configuration": [
     { "name": "Source", "properties": {
-      "Source Database Connection URL": { "valueType": "STRING_LITERAL", "value": "jdbc:postgresql://ju5u5cax6raapbr77r7pqsjm64.sfpscogs-swtberlin2026-openflow.eu-central-1.aws.postgres.snowflake.app:5432/postgres?sslmode=require" },
+      "Source Database Connection URL": { "valueType": "STRING_LITERAL", "value": "jdbc:postgresql://<postgres_hostname>:5432/postgres?sslmode=require" },
       "Source Database Driver": { "valueType": "ASSET_REFERENCE", "assetIds": ["postgresql-42.7.4.jar"] },
       "Source Database User": { "valueType": "STRING_LITERAL", "value": "swtber26_cdc" },
       "Source Database Password": { "valueType": "SECRET_REFERENCE", "fullyQualifiedSecretName": "OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET" },
@@ -430,9 +423,9 @@ ALTER GIT REPOSITORY OPENFLOW_SHARED.GIT.SWT_BERLIN_HOL_REPO FETCH;
 --    this block once, not every user.
 -- ---------------------------------------------------------------------------
 USE ROLE ACCOUNTADMIN;
-
 CREATE ROLE IF NOT EXISTS SWTBER26_ATTENDEE_RL
   COMMENT = 'Shared privileges for all Openflow HoL attendees - deployment usage, EAI, warehouse, shared infra, Postgres credentials. [openflow]';
+GRANT ROLE SWTBER26_ATTENDEE_RL TO ROLE SYSADMIN;
 
 -- Gen2 self-service Openflow access. USAGE on the DEPLOYMENT object is what
 -- makes it visible and usable; runtimes are then created inside each
@@ -451,7 +444,7 @@ GRANT USAGE ON SCHEMA OPENFLOW_SHARED.INFRA TO ROLE SWTBER26_ATTENDEE_RL;
 GRANT USAGE ON SCHEMA OPENFLOW_SHARED.GIT   TO ROLE SWTBER26_ATTENDEE_RL;
 GRANT USAGE ON SCHEMA OPENFLOW_SHARED.PG    TO ROLE SWTBER26_ATTENDEE_RL;
 
--- UC2 Postgres access: the connector config references the secret, so the
+-- Use Case 2 Postgres access: the connector config references the secret, so the
 -- attendee's role (the runtime's EXECUTE_AS_ROLE) needs READ on it.
 GRANT READ ON SECRET OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET TO ROLE SWTBER26_ATTENDEE_RL;
 GRANT SELECT ON VIEW OPENFLOW_SHARED.PG.UC2_CONNECTION_INFO    TO ROLE SWTBER26_ATTENDEE_RL;
@@ -481,9 +474,9 @@ ALTER STAGE OPENFLOW_SHARED.PG.UC2_FILES    REFRESH;
 
 -- Everything an attendee touches should be listed here, all in OPENFLOW_SHARED.
 -- Run as an attendee role to confirm the shared technical role grants work:
---   USE ROLE SWTBER26_USER01_RL;
---   SELECT * FROM OPENFLOW_SHARED.PG.UC2_CONNECTION_INFO;
---   SELECT OPENFLOW_SHARED.PG.UC2_CONFIG_FOR('SWTBER26_USER01');
---   LS @OPENFLOW_SHARED.PG.UC2_FILES;
---   LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
---   SELECT COUNT(*) FROM OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS;
+USE ROLE SWTBER26_ATTENDEE_RL;
+SELECT * FROM OPENFLOW_SHARED.PG.UC2_CONNECTION_INFO;
+SELECT OPENFLOW_SHARED.PG.UC2_CONFIG_FOR('SWTBER26_USER01');
+LS @OPENFLOW_SHARED.PG.UC2_FILES;
+LS @OPENFLOW_SHARED.INFRA.UC1_FILES;
+SELECT COUNT(*) FROM OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS;

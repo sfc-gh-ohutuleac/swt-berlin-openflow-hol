@@ -89,7 +89,7 @@ need to trim the fact table:
 SELECT cron.unschedule('swtber26_generate_readings');   -- pause the generator
 TRUNCATE public.sensor_readings;
 -- re-seed and re-schedule by re-running section 3 and 6 of
--- ../2_postgres/swt26_ber_uc2_postgres_setup.sql
+-- ../0_setup/postgres_setup.sql
 ```
 
 Note that truncating the source does **not** remove already-replicated rows from attendee

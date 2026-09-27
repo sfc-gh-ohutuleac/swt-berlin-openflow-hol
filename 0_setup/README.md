@@ -24,7 +24,7 @@ This folder contains everything needed to stand the lab up from scratch and tear
 
 ### 1. Run the shared admin layer
 
-Execute `admin_setup.sql` as **ACCOUNTADMIN** in a Snowsight worksheet. This creates:
+Execute Step-by-Step `admin_setup.sql` as **ACCOUNTADMIN** in a Snowsight worksheet. Replace placeholders Step-by-Step. This creates:
 
 1. `OPENFLOW_ADMIN` role
 2. `OPENFLOW_SHARED` database (INFRA, GIT, PG schemas)
@@ -37,7 +37,9 @@ Execute `admin_setup.sql` as **ACCOUNTADMIN** in a Snowsight worksheet. This cre
 
 ### 2. Set up the Postgres source (For Use Case 2 Postgres only)
 
-Run `../2_postgres/swt26_ber_uc2_postgres_setup.sql` via `psql` as `snowflake_admin`. This creates the source tables, CDC user, publication, and the row generator.
+Remember to add you current IP ADDRESS to the network policy of postgres db. You can find your IP by running `SELECT CURRENT_IP_ADDRESS()`
+
+Run `postgres_setup.sql` via `psql` or `DBeaver` as `snowflake_admin`. This creates the source tables, CDC user, publication, and the row generator.
 
 ### 3. Render and provision users
 
@@ -82,6 +84,11 @@ To add more attendees:
 4. Execute the new runtime blocks from `rendered/provision_runtimes.sql`
 
 See `reset_and_scale_procedure.md` for cost/quota considerations and batch guidance.
+
+
+## READY
+
+Now you are ready to give the participants the user/passwd and let them start the Use Cases.
 
 ## Deprovisioning
 
