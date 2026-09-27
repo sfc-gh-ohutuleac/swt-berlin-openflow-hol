@@ -1,0 +1,42 @@
+{#-
+  Openflow HoL - Resume All Per-User Runtimes
+
+  Resumes every attendee's previously suspended runtime.
+  Processes in batches of 10: issues RESUME for the batch, then waits
+  for all to reach ACTIVE before moving to the next batch.
+
+  Requires (from users.yml): users.
+  Run as ACCOUNTADMIN.
+-#}
+--!jinja
+-- ============================================================================
+-- Openflow HoL - Resume All Per-User Runtimes
+-- GENERATED FILE - edit templates/resume_runtimes.sql.j2 instead.
+-- ============================================================================
+{% if users is not defined %}
+{%- set users = [] -%}
+{%- for uid in user_ids.split(',') -%}
+  {%- set _ = users.append({'id': uid}) -%}
+{%- endfor %}
+{% endif %}
+
+USE ROLE ACCOUNTADMIN;
+
+{% for batch_start in range(0, users | length, 10) %}
+{%- set batch = users[batch_start:batch_start + 10] %}
+-- -- Batch {{ (batch_start // 10) + 1 }}: {{ batch[0].id | upper }} .. {{ batch[-1].id | upper }}
+{% for user in batch %}
+USE ROLE SWTBER26_{{ user.id | upper }}_RL;
+ALTER OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME RESUME;
+{% endfor %}
+{% for user in batch %}
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(900, 'ACTIVE', 'SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME') AS {{ user.id }}_active;
+{% endfor %}
+
+{% endfor %}
+-- ============================================================================
+-- Verification
+-- ============================================================================
+USE ROLE ACCOUNTADMIN;
+
+SHOW OPENFLOW RUNTIMES IN ACCOUNT;

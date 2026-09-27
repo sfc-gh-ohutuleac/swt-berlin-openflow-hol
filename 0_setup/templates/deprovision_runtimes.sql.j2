@@ -4,6 +4,11 @@
   Reverses provision_runtimes.sql.j2. Uses the documented Gen2 teardown order:
       SUSPEND -> TERMINATE [CASCADE] -> DROP
 
+  Processes runtimes in batches of 10: issues all SUSPEND commands for the
+  batch, waits for all to reach SUSPENDED, then TERMINATE CASCADE, waits for
+  TERMINATED, then DROP. This parallelises the async operations within each
+  batch instead of waiting one-by-one.
+
   TERMINATE CASCADE terminates every connector inside the runtime first. Plain
   TERMINATE FAILS if the runtime still contains connectors, so CASCADE is used
   here - attendees will normally have created a connector.
@@ -17,7 +22,7 @@
     slot. Orphaned slots pin WAL forever and will eventually exhaust
     max_replication_slots and fill the instance's storage. After running this,
     clean up on the Postgres side - see section 8 of
-    2_postgres/swt26_ber_uc2_postgres_setup.sql.
+    0_setup/postgres_setup.sql.
 -#}
 --!jinja
 -- ============================================================================
@@ -25,6 +30,8 @@
 -- GENERATED FILE - edit templates/deprovision_runtimes.sql.j2 instead.
 --
 -- DESTRUCTIVE. Review before running, and run only the blocks you mean.
+-- Processes runtimes in batches of 10: SUSPEND all -> wait -> TERMINATE all
+-- -> wait -> DROP all, then next batch.
 -- ============================================================================
 {% if users is not defined %}
 {%- set users = [] -%}
@@ -35,20 +42,44 @@
 
 USE ROLE ACCOUNTADMIN;
 
-{% for user in users %}
--- ----------------------------------------------------------------------------
--- {{ user.id | upper }}
--- ----------------------------------------------------------------------------
+{% for batch_start in range(0, users | length, 10) %}
+{%- set batch = users[batch_start:batch_start + 10] %}
+-- ============================================================================
+-- BATCH {{ (batch_start // 10) + 1 }}: {{ batch[0].id | upper }} .. {{ batch[-1].id | upper }}
+-- ============================================================================
+
+-- Phase 1: SUSPEND
+{% for user in batch %}
 USE ROLE SWTBER26_{{ user.id | upper }}_RL;
-
 ALTER OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME SUSPEND;
-SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(600, 'SUSPENDED', 'SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME');
+{% endfor %}
 
+-- Phase 2: Wait for SUSPENDED
+{% for user in batch %}
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(600, 'SUSPENDED', 'SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME') AS {{ user.id }}_suspended;
+{% endfor %}
+
+-- Phase 3: TERMINATE CASCADE
+{% for user in batch %}
+USE ROLE SWTBER26_{{ user.id | upper }}_RL;
 ALTER OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME TERMINATE CASCADE;
+{% endfor %}
 
-DROP OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME;
+-- Phase 4: Wait for TERMINATED
+{% for user in batch %}
+SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(600, 'TERMINATED', 'SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME') AS {{ user.id }}_terminated;
+{% endfor %}
 
-USE ROLE ACCOUNTADMIN;
+-- Phase 5: DROP
+{% for user in batch %}
+USE ROLE SWTBER26_{{ user.id | upper }}_RL;
+DROP OPENFLOW RUNTIME IF EXISTS SWTBER26_{{ user.id | upper }}.PUBLIC.SWTBER26_{{ user.id | upper }}_RUNTIME CASCADE;
+{% endfor %}
 
 {% endfor %}
+-- ============================================================================
+-- Verification
+-- ============================================================================
+USE ROLE ACCOUNTADMIN;
+
 SHOW OPENFLOW RUNTIMES IN ACCOUNT;

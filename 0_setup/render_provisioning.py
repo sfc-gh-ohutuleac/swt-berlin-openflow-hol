@@ -64,8 +64,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--only",
-        choices=["provision", "deprovision"],
-        help="Render only one side (default: both)",
+        choices=["provision", "deprovision", "suspend", "resume"],
+        help="Render only one side (default: all)",
     )
     args = parser.parse_args()
 
@@ -80,6 +80,10 @@ def main() -> None:
     if args.only in (None, "deprovision"):
         targets.append(("deprovision_users.sql.j2", "deprovision_users.sql"))
         targets.append(("deprovision_runtimes.sql.j2", "deprovision_runtimes.sql"))
+    if args.only in (None, "suspend"):
+        targets.append(("suspend_runtimes.sql.j2", "suspend_runtimes.sql"))
+    if args.only in (None, "resume"):
+        targets.append(("resume_runtimes.sql.j2", "resume_runtimes.sql"))
 
     for template_name, output_name in targets:
         output_path = render(template_name, context, output_name)
