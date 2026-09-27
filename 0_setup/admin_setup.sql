@@ -245,9 +245,9 @@ CREATE STAGE IF NOT EXISTS OPENFLOW_SHARED.INFRA.UC1_FILES
 -- ---------------------------------------------------------------------------
 USE ROLE OPENFLOW_ADMIN;
 
--- Replace with the real snowflake_admin (or dedicated replication user)
+-- Replace with the real replication user (created in postgres_setup.sql)
 -- password captured from CREATE POSTGRES INSTANCE.
-CREATE SECRET IF NOT EXISTS OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET
+CREATE OR REPLACE SECRET OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET
   TYPE = GENERIC_STRING
   SECRET_STRING = '<postgres_replication_user_password>'
   COMMENT = 'Postgres CDC password for Use Case 2. READ granted to attendees; value never exposed. [openflow]';

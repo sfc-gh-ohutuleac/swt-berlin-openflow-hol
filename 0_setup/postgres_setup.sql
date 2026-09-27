@@ -114,9 +114,9 @@ WHERE NOT EXISTS (SELECT 1 FROM public.sensor_readings);
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'swtber26_cdc') THEN
-        CREATE ROLE swtber26_cdc WITH LOGIN REPLICATION PASSWORD '<postgres_replication_password>!';
+        CREATE ROLE swtber26_cdc WITH LOGIN REPLICATION PASSWORD '<postgres_replication_user_password>';
     ELSE
-        ALTER ROLE swtber26_cdc WITH LOGIN REPLICATION PASSWORD '<postgres_replication_password>!';
+        ALTER ROLE swtber26_cdc WITH LOGIN REPLICATION PASSWORD '<postgres_replication_user_password>';
     END IF;
 END
 $$;

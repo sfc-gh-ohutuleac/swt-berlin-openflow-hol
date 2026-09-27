@@ -4,7 +4,7 @@ In this lab you'll replicate live data out of a PostgreSQL database into your ow
 Snowflake database using the **Openflow Connector for PostgreSQL** and Change
 Data Capture (CDC).
 
-Unlike UC1, you don't build a flow processor-by-processor. A connector is a
+Unlike Use Case 1, you don't build a flow processor-by-processor. A connector is a
 pre-packaged flow: you supply configuration, start it, and it handles the
 initial snapshot plus a continuous stream of inserts, updates and deletes.
 
@@ -70,7 +70,7 @@ SHOW OPENFLOW RUNTIMES IN DATABASE SWTBER26_USER<N>;
 >
 > ```sql
 > CREATE OPENFLOW RUNTIME SWTBER26_USER<N>.PUBLIC.SWTBER26_USER<N>_RUNTIME
->   IN DEPLOYMENT MY_SNOWFLAKE_DEPLOYMENT
+>   IN DEPLOYMENT SWTBER26_LAB_DEPLOYMENT
 >   NODE_TYPE = SMALL
 >   MIN_NODES = 1          -- the Postgres CDC connector requires exactly 1 node
 >   MAX_NODES = 1
@@ -110,7 +110,6 @@ anything:
 |---|---|
 | Connection details (no password) | `OPENFLOW_SHARED.PG.UC2_CONNECTION_INFO` (view) |
 | Postgres password | `OPENFLOW_SHARED.PG.SWTBER26_PG_CDC_SECRET` (secret - referenced, never read by you) |
-| JDBC driver + config template | `OPENFLOW_SHARED.PG.UC2_FILES` (stage) |
 | Ready-made connector config | `OPENFLOW_SHARED.PG.UC2_CONFIG_FOR('<your_db>')` (function) |
 | Runtime and connector logs | `OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS` (event table) |
 
@@ -124,6 +123,8 @@ own role inherits. Every attendee has exactly the same access.
 Choose **one** of the two paths below. Option A (guided setup) is the
 recommended route for the lab. Option B (SQL) is the same thing done
 declaratively, and is how you'd automate this in the real world.
+
+---
 
 ### Option A - Guided setup in Snowsight
 
@@ -239,7 +240,7 @@ then **`Next`**.
 |---|---|
 | Snowflake Destination Database | `SWTBER26_USER<N>` |
 | Snowflake Warehouse | `COMPUTE_WH` |
-| Destination Schema Strategy | `{schema}` |
+| Destination Schema Strategy | `{database}_{schema}` |
 | Object Identifier Resolution | `Case Insensitive` |
 | Legacy Format Support | `Standard` |
 | Oversized Value Strategy | `Set Null` |
@@ -296,12 +297,9 @@ Open the row's **`⋮`** menu and choose **`Start`**.
 > That menu is also where you'll find **View canvas** (the NiFi flow) and
 > **Monitor in Snowsight** - both useful while you wait for data in Step 5.
 
-Give it a minute, refresh, and confirm the state becomes running. Now jump to
-Step 5 to watch the data arrive.
+**Give it a minute, refresh, and confirm the state becomes running.**
 
----
-
-### Seeing what the wizard produced, as SQL
+#### 4.11 Seeing what the wizard produced, as SQL
 
 A Gen 2 connector is a real Snowflake object, and everything you just clicked
 through was written to a `config.json` on the connector's own internal versioned
@@ -316,7 +314,7 @@ USE WAREHOUSE COMPUTE_WH;
 SHOW OPENFLOW CONNECTORS IN SCHEMA SWTBER26_USER<N>.PUBLIC;
 
 -- What's on its versioned stage
-LS 'snow://openflow_connector/SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC/versions/live/';
+LS 'snow://openflow_connector/SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC/versions/last/';
 ```
 
 You'll see your `config.json` and the driver jar you uploaded. To read the JSON,
@@ -330,10 +328,8 @@ CREATE OR REPLACE FILE FORMAT SWTBER26_USER<N>.PUBLIC.RAW_TEXT
   ESCAPE_UNENCLOSED_FIELD = NONE COMPRESSION = NONE;
 
 COPY FILES INTO @SWTBER26_USER<N>.PUBLIC.MY_UC2_FILES/
-  FROM 'snow://openflow_connector/SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC/versions/live/'
+  FROM 'snow://openflow_connector/SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC/versions/last/'
   FILES = ('config.json');
-
-ALTER STAGE SWTBER26_USER<N>.PUBLIC.MY_UC2_FILES REFRESH;
 
 -- Reassemble the file into a single JSON value
 SELECT TRY_PARSE_JSON(LISTAGG($1, '\n')) AS config
@@ -343,6 +339,8 @@ FROM @SWTBER26_USER<N>.PUBLIC.MY_UC2_FILES/config.json
 
 Compare that output with the config in Option B below - same structure, same
 property names. The guided setup is a front end over this file.
+
+---
 
 ### Option B - SQL (no local tools needed)
 
@@ -354,7 +352,7 @@ You can do all of this **from a Snowsight worksheet**. You never edit JSON by
 hand and you never need Snowflake CLI: a helper function generates your
 `config.json`, and `COPY FILES` moves it onto the connector's stage.
 
-**1. Create the connector**
+#### 4.1 Create the connector
 
 ```sql
 USE ROLE SWTBER26_USER<N>_RL;
@@ -369,7 +367,7 @@ CREATE OPENFLOW CONNECTOR SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC
 SELECT SYSTEM$WAIT_FOR_STABLE_OPENFLOW_CONNECTORS(600, 'SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC');
 ```
 
-**2. Generate your `config.json`**
+#### 4.2 Generate your `config.json`
 
 `OPENFLOW_SHARED.PG.UC2_CONFIG_FOR(<your_database>)` returns a complete,
 ready-to-use configuration - source URL, user, secret reference, publication,
@@ -396,7 +394,7 @@ COPY INTO @SWTBER26_USER<N>.PUBLIC.MY_UC2_FILES/config.json
 > The `FILE_FORMAT` options matter: they stop Snowflake adding quotes or escapes
 > that would corrupt the JSON.
 
-**3. Copy the config and the JDBC driver onto the connector's stage**
+#### 4.3 Copy the config and the JDBC driver onto the connector's stage
 
 The connector does not ship with the PostgreSQL JDBC driver - you supply it as a
 connector *asset*. A copy is staged for you in `OPENFLOW_SHARED`:
@@ -418,7 +416,7 @@ COPY FILES INTO 'snow://openflow_connector/SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC/ve
 LS 'snow://openflow_connector/SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC/versions/live/';
 ```
 
-**4. Commit and start**
+#### 4.4 Commit and start
 
 ```sql
 ALTER OPENFLOW CONNECTOR SWTBER26_USER<N>.PUBLIC.UC2_PG_CDC COMMIT;
@@ -476,8 +474,8 @@ USE WAREHOUSE COMPUTE_WH;
 SHOW OPENFLOW CONNECTORS IN DATABASE SWTBER26_USER<N>;   -- expect status RUNNING
 
 -- The connector creates the schema and tables for you.
-SELECT COUNT(*) FROM SWTBER26_USER<N>.PUBLIC.SENSORS;           -- expect 10
-SELECT COUNT(*) FROM SWTBER26_USER<N>.PUBLIC.SENSOR_READINGS;   -- ~20,000 and climbing
+SELECT COUNT(*) FROM SWTBER26_USER<N>.POSTGRES_PUBLIC.SENSORS;           -- expect 10
+SELECT COUNT(*) FROM SWTBER26_USER<N>.POSTGRES_PUBLIC.SENSOR_READINGS;   -- ~20,000 and climbing
 ```
 
 In the Snowsight object explorer, your destination database now has a `PUBLIC`
@@ -501,7 +499,7 @@ should grow by roughly 60 (5 rows every 5 seconds):
 
 ```sql
 SELECT COUNT(*) AS readings, MAX(READING_TS) AS newest
-FROM SWTBER26_USER<N>.PUBLIC.SENSOR_READINGS;
+FROM SWTBER26_USER<N>.POSTGRES_PUBLIC.SENSOR_READINGS;
 ```
 
 And a query that actually uses the join, to show both tables replicated:
@@ -512,8 +510,8 @@ SELECT s.LOCATION,
        COUNT(*)                        AS readings,
        ROUND(AVG(r.VALUE), 2)          AS avg_value,
        MAX(r.READING_TS)               AS newest
-FROM SWTBER26_USER<N>.PUBLIC.SENSOR_READINGS r
-JOIN SWTBER26_USER<N>.PUBLIC.SENSORS s
+FROM SWTBER26_USER<N>.POSTGRES_PUBLIC.SENSOR_READINGS r
+JOIN SWTBER26_USER<N>.POSTGRES_PUBLIC.SENSORS s
   ON s.SENSOR_ID = r.SENSOR_ID
 GROUP BY s.LOCATION, s.SENSOR_TYPE
 ORDER BY s.LOCATION, s.SENSOR_TYPE;
@@ -524,11 +522,14 @@ read automatically:
 
 ```sql
 SELECT TIMESTAMP,
-       TRY_PARSE_JSON(VALUE::string):formattedMessage::string AS msg
+      TRY_PARSE_JSON(VALUE::string):formattedMessage::string AS msg
 FROM OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS
-WHERE TIMESTAMP > DATEADD('minute', -15, CURRENT_TIMESTAMP())
+WHERE TIMESTAMP > DATEADD('minute', -30, CURRENT_TIMESTAMP())
+  AND RESOURCE_ATTRIBUTES:"k8s.container.name"::string = 'swtber26user<N>runtime-100-server'
+  AND RESOURCE_ATTRIBUTES:"application"::string = 'openflow'
+  AND msg IS NOT NULL
 ORDER BY TIMESTAMP DESC
-LIMIT 50;
+LIMIT 500;
 ```
 
 ## Step 6 - Bonus: watch an UPDATE and a DELETE replicate
@@ -565,6 +566,7 @@ SELECT TIMESTAMP,
        TRY_PARSE_JSON(VALUE::string):formattedMessage::string AS msg
 FROM OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS
 WHERE TIMESTAMP > DATEADD('minute', -15, CURRENT_TIMESTAMP())
+  AND RESOURCE_ATTRIBUTES:"snow.database.name"::string = 'SWTBER26_USER<N>'
   AND TRY_PARSE_JSON(VALUE::string):level::string = 'ERROR'
 ORDER BY TIMESTAMP DESC
 LIMIT 20;

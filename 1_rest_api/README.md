@@ -17,7 +17,7 @@ Everywhere below, replace `<N>` with your own attendee number.
 ## Step 1 - Log in and confirm your role
 
 1. Go to Snowsight and log in with your assigned username/password.
-2. Check the role selector (top left) - it should already default to
+2. Check the role selector (bottom left) - it should already default to
    `SWTBER26_USER<N>_RL`. This is your role for everything in this lab: it
    owns your database and used as your Openflow runtime's "execute-as"
    role.
@@ -121,7 +121,7 @@ contains a reference schema (including an optional Iceberg-table variant).
 
 Choose one of the two paths below.
 
-**Fast path** — import the pre-built flow:
+#### 3.2.1 **FAST PATH** — import the pre-built flow:
 
 1. Download the `swt26_ber_flow.json` from the git repo or from the shared lab stage - in Snowsight go to
    **Data » Databases » OPENFLOW_SHARED » INFRA » Stages » UC1_FILES**.
@@ -157,7 +157,9 @@ Choose one of the two paths below.
 
    If you are skipping the Iceberg bonus, just delete the second processor.
 
-**Manual path** *(recommended at least once)* — follow `swt26_ber_hints.txt` to build these processors yourself.
+#### 3.2.2 **MANUAL PATH** — *(recommended at least once)*
+
+Follow `swt26_ber_hints.txt` to build these processors yoursel.
 
 First, **create a Process Group to build in**: drag a **Process Group** from the
 top toolbar onto the canvas, give it a name (e.g. `User Spending Enrichment`),
@@ -205,7 +207,7 @@ Configure `PublishSnowpipeStreaming`:
 
 Auto-terminate all four relationships: `success`, `failure`, `invalid`, `empty`.
 
-#### How the processor finds your table: the default pipe
+### Step 3.3 - How the processor finds your table: the default pipe
 
 You never create the pipe yourself. Snowflake provides a **default pipe** for
 every table, created on demand the first time something streams to it. Its name
@@ -248,6 +250,8 @@ same data land in an open table format with no extra config.
 
 There are two ways to start the flow:
 
+### Step 4.1 - Start First Run
+
 **Option A: Start all processors individually, then trigger once** *(recommended)*
 
 1. Start every processor **except** the `Trigger` (GenerateFlowFile) — right-click each and select **Start**, or select all non-trigger processors and start them together.
@@ -268,7 +272,7 @@ hit Start - there is no separate "Run Once" step.
 Afterwards the `Trigger` stays running and will fire again on its 1-hour
 schedule. Stop it (or the whole group) once you've verified the data.
 
-## Step 4.5 - Run it again (and see exactly-once delivery in action)
+### Step 4.2 - Run it again (and see exactly-once delivery in action)
 
 Trigger the flow a second time and check the row count. It stays at **30** -
 nothing new was inserted.
@@ -283,10 +287,15 @@ To actually re-run with fresh data, pick one:
 
 | Option | How | When to use |
 |---|---|---|
-| **New channel group** | Change `Channel Group` from `SHARED` to `SHARED-2` | Quickest one-off reset |
+| **New channel group** | Change `Channel Group` from `SHARED` to `SHARED-NEW` | Quickest one-off reset |
 | **Disable offset tracking** | Set `Offset Tracking Resolution` to `Disabled` | Best for repeated demos - inserts every time |
 
-In all cases, truncate the table first so you do not end up with duplicates:
+
+### Step 4.3 - (Optional) Truncate table and start again
+
+In case something goes wrong, cleanup resources and start again.
+
+Truncate the table first so you do not end up with duplicates:
 
 ```sql
 TRUNCATE TABLE SWTBER26_USER<N>.PUBLIC.<YOUR_TABLE_NAME>;
@@ -312,10 +321,15 @@ If you want to look at your own runtime's telemetry (logs/metrics), you can
 query the shared event table - you have read access automatically:
 
 ```sql
-SELECT *
+SELECT TIMESTAMP,
+      TRY_PARSE_JSON(VALUE::string):formattedMessage::string AS msg
 FROM OPENFLOW_SHARED.INFRA.OPENFLOW_EVENTS
+WHERE TIMESTAMP > DATEADD('minute', -30, CURRENT_TIMESTAMP())
+  AND RESOURCE_ATTRIBUTES:"k8s.container.name"::string = 'swtber26user<N>runtime-100-server'
+  AND RESOURCE_ATTRIBUTES:"application"::string = 'openflow'
+  AND msg IS NOT NULL
 ORDER BY TIMESTAMP DESC
-LIMIT 50;
+LIMIT 500;
 ```
 
 All reference files for this lab live on a shared stage in `OPENFLOW_SHARED`
