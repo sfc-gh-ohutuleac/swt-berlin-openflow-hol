@@ -1,6 +1,6 @@
-# swt-berlin-openflow-hol
+# Snowflake World Tour Berlin 2026 - Openflow Hands on Lab
 
-Snowflake World Tour Berlin 2026 - Openflow Hands On Lab
+Welcome to the Openflow Hands On Lab at Berlin SWT 2026.
 
 ## Overview
 
@@ -10,9 +10,9 @@ your role, your Openflow runtime, and the source systems.
 
 | Folder | Use case | Approach |
 |---|---|---|
-| [`1_rest_api/`](1_rest_api/) | **UC1 - REST API** | Build a flow by hand on the NiFi canvas: fetch and enrich JSON from a public API, write with Snowpipe Streaming |
-| [`2_postgres/`](2_postgres/) | **UC2 - Postgres CDC** | Configure the PostgreSQL connector to continuously replicate a live database, via the guided wizard or pure SQL |
-| [`3_kafka/`](3_kafka/) | **UC3 - Kafka** | Stream from a Kafka/Redpanda topic *(pending broker provisioning)* |
+| [`1_rest_api/`](1_rest_api/) | **Use Case 1 - REST API** | Build a flow by hand on the NiFi canvas: fetch and enrich JSON from a public API, write with Snowpipe Streaming |
+| [`2_postgres/`](2_postgres/) | **Use Case 2 - Postgres CDC** | Configure the PostgreSQL connector to continuously replicate a live database, via the guided wizard or pure SQL |
+| [`3_kafka/`](3_kafka/) | **Use Case 3 - Kafka** | Stream from a Kafka/Redpanda topic *(pending broker provisioning)* |
 
 Each folder has its own README and a step-by-step runbook - start there.
 
@@ -51,7 +51,7 @@ Shows both the guided setup wizard and the fully declarative SQL path.
 | `smoke_test_checklist.md` | Pre-event verification |
 | `reset_and_scale_procedure.md` | Between-session reset and scaling up |
 
-Run order: `admin_setup.sql` -> UC2 Postgres source setup -> `provision_users.sql`
+Run order: `admin_setup.sql` -> Use Case 2 Postgres source setup -> `provision_users.sql`
 -> `provision_runtimes.sql`.
 
 ## Links
