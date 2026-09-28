@@ -65,12 +65,39 @@ python3 render_provisioning.py --only deprovision
 
 ### 4. Run the provisioning SQL
 
-Execute in order as **ACCOUNTADMIN**:
+You can execute the rendered SQL files using **Snowflake CLI** (`snow`), a **Snowsight worksheet**, or any SQL client.
 
+The Runtimes are always provisioned/deprovisoned in batches of 10, waiting for the batch to finish completely before moving to the next one.
+
+#### Using Snowflake CLI (recommended)
+
+```bash
+# Provision users (databases, roles, users)
+snow sql -f rendered/provision_users.sql -c <connection_name>
+
+# Provision runtimes (one per attendee, 3-5 min each)
+snow sql -f rendered/provision_runtimes.sql -c <connection_name>
 ```
-rendered/provision_users.sql       # creates all attendee databases, roles, users
-rendered/provision_runtimes.sql    # creates one runtime per attendee (3-5 min each)
+
+Replace `<connection_name>` with your Snowflake CLI connection name (from `~/.snowflake/connections.toml`). The connection must use a role with ACCOUNTADMIN privileges.
+
+Other rendered scripts work the same way:
+
+```bash
+# Suspend all runtimes (between sessions, to stop compute costs)
+snow sql -f rendered/suspend_runtimes.sql -c <connection_name>
+
+# Resume all runtimes
+snow sql -f rendered/resume_runtimes.sql -c <connection_name>
+
+# Deprovision
+snow sql -f rendered/deprovision_runtimes.sql -c <connection_name>
+snow sql -f rendered/deprovision_users.sql -c <connection_name>
 ```
+
+#### Using Snowsight
+
+Open a worksheet as ACCOUNTADMIN, paste the contents of the rendered SQL file, and execute.
 
 Runtime creation is asynchronous — run in batches and wait for each batch to reach `ACTIVE` before starting the next.
 
