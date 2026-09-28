@@ -1315,7 +1315,7 @@
                 "properties": {
                     "Max String Length": "20 MB",
                     "Null Value Representation": "empty string",
-                    "JsonPath Expression": "$.users[*]"
+                    "JsonPath Expression": "$.user[*]"
                 },
                 "propertyDescriptors": {
                     "Max String Length": {

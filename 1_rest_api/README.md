@@ -35,8 +35,8 @@ Everywhere below, replace `<N>` with your own attendee number.
 1. In the left navigation, go to **Ingestion » Openflow**.
 2. You'll see the lab **deployment** - you have `USAGE` on it, so it's visible to you.
 3. Click **Create a runtime**. Fill in:
-   - **Runtime Name**: e.g. `SWTBER26_USER<N>_RUNTIME`
-   - **Deployment**: select the lab deployment
+   - **Runtime Name**: e.g. `USER<N> Runtime`
+   - **Deployment**: select the lab deployment, `SWT Berlin HoL Deployment`
    - **Node Type**: `SMALL`
    - **Min/Max Nodes**: `1` / `1`
    - **Execute-as role**: `SWTBER26_USER<N>_RL` (your own role)
@@ -53,13 +53,13 @@ Runtimes are first-class Snowflake objects in Gen2 and can be created, altered, 
 USE ROLE SWTBER26_USER<N>_RL;
 
 CREATE OPENFLOW RUNTIME SWTBER26_USER<N>.PUBLIC.SWTBER26_USER<N>_RUNTIME
-  IN DEPLOYMENT <shared_deployment_name>
+  IN DEPLOYMENT MY_SNOWFLAKE_DEPLOYMENT
   NODE_TYPE = SMALL
   MIN_NODES = 1
   MAX_NODES = 1
   EXECUTE_AS_ROLE = SWTBER26_USER<N>_RL
   EXTERNAL_ACCESS_INTEGRATIONS = (SWTBER26_LAB_EAI)
-  DISPLAY_NAME = 'User <N> Runtime';
+  DISPLAY_NAME = 'USER<N> Runtime';
 
 -- Wait for the runtime to become ACTIVE (provisioning takes ~3-5 minutes)
 SELECT SYSTEM$WAIT_FOR_OPENFLOW_RUNTIME_STATUS(
@@ -73,7 +73,7 @@ Reference: [Quickstart: Gen2 Openflow — Create a runtime](https://docs.snowfla
 
 ### Step 2.2 - Open your runtime
 
-Your runtime (`SWTBER26_USER<N>_RUNTIME`) has been pre-created and is already **Active**.
+Your runtime (`USER<N> Runtime`) has been pre-created and is already **Active**.
 
 1. In the left navigation, go to **Ingestion » Openflow** » **Launch Openflow** » **Runtimes**
 2. Click on your runtime to open the NiFi canvas.
@@ -174,7 +174,7 @@ Then build this chain:
 ```
 GenerateFlowFile (Trigger)
   -> InvokeHTTP (GET https://dummyjson.com/users?limit=30&select=id,firstName,lastName,email,address)
-  -> SplitJson ($.users[*])
+  -> SplitJson
   -> EvaluateJsonPath (user_id, first_name, last_name, email, city, country)
   -> InvokeHTTP (GET https://dummyjson.com/carts/user/${user_id})
   -> EvaluateJsonPath (cart_total, cart_discounted, total_products, total_quantity)
@@ -271,6 +271,59 @@ hit Start - there is no separate "Run Once" step.
 
 Afterwards the `Trigger` stays running and will fire again on its 1-hour
 schedule. Stop it (or the whole group) once you've verified the data.
+
+### Doesn't work as expected? Diagnose it with CoCo!
+
+Flows rarely work first time. Typical symptoms:
+
+- Your table is **empty**, or has **fewer rows** than you expect
+- A processor shows a yellow **WARNING** or red **ERROR** bulletin - the small
+  icon in its top-right corner. Click it to read the message
+- FlowFiles **pile up** in a queue and never move on
+- Some columns arrive **empty** or hold the wrong values
+- Nothing happens at all after you start the flow
+
+Any of these can come from a single mistyped property. A wrong JsonPath, a typo
+in a URL, an attribute name that doesn't match, the wrong pipe or database on
+`PublishSnowpipeStreaming`, a controller service that was never enabled - each
+produces a different symptom.
+
+This is exactly the kind of problem CoCo is good at. Two Openflow skills ship
+with it - see
+[CoCo bundled skills](https://docs.snowflake.com/en/user-guide/cortex-code/bundled-skills):
+
+| Skill | What it covers |
+|---|---|
+| [`/openflow`](https://docs.snowflake.com/en/user-guide/cortex-code/bundled-skills#openflow) | Deploy and configure connectors, diagnose flow failures, build custom ingestion pipelines, pick the right processor, NiFi Expression Language |
+| [`/openflow-observability`](https://docs.snowflake.com/en/user-guide/cortex-code/bundled-skills#openflow-observability) | Root-cause analysis from the event table: unhealthy connectors, stuck runtimes, EAI and network errors, out-of-memory and crash issues |
+
+**Not every capability is available through the CoCo via Snowsight.** Changing your canvas
+directly - adding processors, editing properties, clearing processor state - goes
+through the NiFi API, which needs CoCo Desktop or the CLI. In Snowsight, CoCo
+works over SQL and your event table, which is enough to **find** the root cause.
+You then apply the fix yourself in the Openflow UI.
+
+Open CoCo in Snowsight and invoke `/openflow`. Give it something to anchor on:
+
+- **Your runtime** - `USER<N> Runtime`
+- **Your process group** - the one you built or imported the flow into
+- **A timeframe** - "the last 15 minutes"
+- **The symptom** - what you expected versus what you got
+- **Any error or warning text** - paste the bulletin message in directly
+
+For example:
+
+> `/openflow` My flow in process group `swt26_ber_restapi_flow` on runtime
+> `USER<N> Runtime` should write 30 rows to my table but the table is
+> empty. Check the last 15 minutes and tell me what went wrong.
+
+Or, if you already have a message to work from:
+
+> `/openflow` I see this warning on runtime `USER<N> Runtime`:
+> *<paste the bulletin message here>*. What is causing it and how do I fix it?
+
+Work through whatever it finds, apply the fix in the Openflow UI, then trigger
+the flow again. You should end up with **30** rows.
 
 ### Step 4.2 - Run it again (and see exactly-once delivery in action)
 

@@ -120,7 +120,7 @@ STEP 3: SplitJson
   Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/processors/splitjson
 
   Name:                "Split Users"
-  JsonPath Expression: $.users[*]
+  JsonPath Expression: $.user[*]
   Auto-terminate:      original, failure
   Connect:             "split" relationship -> next processor
 

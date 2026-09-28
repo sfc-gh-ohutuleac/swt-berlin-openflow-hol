@@ -8,7 +8,7 @@ TITLE
 
 DURATION
 --------
-25-30 minutes (after a 10-15 min Openflow overview presentation)
+~75 minutes (after a 10-15 min Openflow overview presentation)
 
 AUDIENCE
 --------
